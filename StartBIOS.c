@@ -27,40 +27,18 @@
 #include <EK_TM4C1294XL.h>
 
 /* Application headers */
-#include <Blink_Task.h>
-#include <UART_Task.h>
+
 
 int main(void)
 {
     uint32_t ui32SysClock;
-    static led_descriptor_t led_desc[2];
     /* Call board init functions. */
     ui32SysClock = Board_initGeneral(120*1000*1000);
     (void)ui32SysClock; // We don't really need this (yet)
 
-    led_desc[0].port_base = GPIO_PORTN_BASE;
-    led_desc[0].led = GPIO_PIN_1;
-    /* Initialize+start Blink Task*/
-    (void)setup_Blink_Task(15, "Blink 500", &led_desc[0], 500);
-    /* System_printf() is VERY slow!*/
-    System_printf("Created Blink Task1\n");
-    System_flush();
 
-    led_desc[1].port_base = GPIO_PORTF_BASE;
-    led_desc[1].led = GPIO_PIN_0;
-    /*Initialize+start Blink Task*/
-    (void)setup_Blink_Task(15, "Blink 250", &led_desc[1], 250);
-    System_printf("Created Blink Task2\n");
-    System_flush();
+    Board_initI2C();
 
-    /*Initialize+start UART Task*/
-    (void)setup_UART_Task(15);
-    System_printf("Created UART Task\n");
-
-    /* SysMin will only print to the console upon calling flush or exit */
-
-    System_printf("Start BIOS\n");
-    System_flush();
 
     /* Start BIOS */
     BIOS_start();
