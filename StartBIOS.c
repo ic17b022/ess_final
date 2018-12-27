@@ -2,6 +2,7 @@
  *  ======== StartBIOS.c ========
  */
 
+// include all common headers
 #include "local_inc/common.h"
 
 int main(void)
