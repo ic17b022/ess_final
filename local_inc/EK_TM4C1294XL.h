@@ -57,7 +57,7 @@ extern "C" {
 #define I2CM_7 0
 #define I2CM_8 1
 
-/*spi configguration*/
+/*spi configuration*/
 #define SSIM_2 1
 #define SSIM_3 0
 
