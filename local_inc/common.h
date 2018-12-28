@@ -8,9 +8,9 @@
 #ifndef COMMON_H_
 #define COMMON_H_
 
+/* Standard bool and standard int header */
 #include <stdbool.h>
 #include <stdint.h>
-#include <inc/hw_memmap.h>
 
 /* XDCtools Header files */
 #include <xdc/std.h>
@@ -28,10 +28,14 @@
 
 /* Driverlib headers */
 #include <driverlib/gpio.h>
+#include <inc/hw_memmap.h> // Supplies GPIO_PORTx_BASE
 
 /* Board Header files */
 #include <Board.h>
 #include <EK_TM4C1294XL.h>
+
+/* Peripheral Header files */
+
 
 /* Application headers */
 

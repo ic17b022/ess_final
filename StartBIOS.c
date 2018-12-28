@@ -12,10 +12,10 @@ int main(void)
     ui32SysClock = Board_initGeneral(120*1000*1000);
     (void)ui32SysClock; // We don't really need this (yet)
 
-
     Board_initI2C();
 
-
+    initSPI();
+    OLED_power_on_short();
     /* Start BIOS */
     BIOS_start();
 }
