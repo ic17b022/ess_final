@@ -17,7 +17,9 @@ int main(void)
 
     initSPI();
 
-    OLED_power_on_short();
+    setup_power_on_short_task("Startup_Oled");
+    System_printf("Created Startup Oled Task\n");
+    System_flush();
     /* Start BIOS */
     BIOS_start();
 }
@@ -30,11 +32,11 @@ int main(void)
  */
 #undef ti_uia_runtime_LogSnapshot_writeNameOfReference
 #define ti_uia_runtime_LogSnapshot_writeNameOfReference(refId, fmt, startAdrs, lengthInMAUs) \
-( \
-(ti_uia_runtime_LogSnapshot_putMemoryRange(ti_uia_events_UIASnapshot_nameOfReference, Module__MID, \
-(IArg)refId,(IArg)__FILE__,(IArg)__LINE__, \
-(IArg)fmt, (IArg)startAdrs, (IArg)lengthInMAUs)) \
-)
+        ( \
+                (ti_uia_runtime_LogSnapshot_putMemoryRange(ti_uia_events_UIASnapshot_nameOfReference, Module__MID, \
+                                                           (IArg)refId,(IArg)__FILE__,(IArg)__LINE__, \
+                                                           (IArg)fmt, (IArg)startAdrs, (IArg)lengthInMAUs)) \
+        )
 
 /* Log the task name whenever a task is created.
  * This works around a limitation of UIA where tasks sharing a "main"
@@ -43,7 +45,7 @@ int main(void)
  */
 #include <string.h>
 Void tskCreateHook(Task_Handle hTask, Error_Block *eb) {
-   String name = Task_Handle_name(hTask);
-   LogSnapshot_writeNameOfReference(hTask, "Task_create: handle=%x", name, strlen(name)+1);
-   ti_uia_runtime_LogSnapshot_writeNameOfReference(hTask, "Task_create: handle=%x", name, strlen(name)+1);
+    String name = Task_Handle_name(hTask);
+    LogSnapshot_writeNameOfReference(hTask, "Task_create: handle=%x", name, strlen(name)+1);
+    ti_uia_runtime_LogSnapshot_writeNameOfReference(hTask, "Task_create: handle=%x", name, strlen(name)+1);
 }

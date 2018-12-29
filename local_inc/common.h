@@ -28,7 +28,15 @@
 
 /* Driverlib headers */
 #include <driverlib/gpio.h>
+#include <inc/hw_gpio.h>
+#include <driverlib/pin_map.h>      // Delivers the pin map defines
+#include <inc/hw_memmap.h>
+#include <inc/hw_types.h>
+#include <driverlib/rom.h>
+#include <driverlib/rom_map.h>
+#include <driverlib/sysctl.h>
 #include <inc/hw_memmap.h> // Supplies GPIO_PORTx_BASE
+#include <driverlib/ssi.h>      // Supplies the difnes for SSI setup
 
 /* Board Header files */
 #include <Board.h>
