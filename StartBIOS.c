@@ -16,6 +16,7 @@ int main(void)
     Board_initSPI();
 
     initSPI();
+
     OLED_power_on_short();
     /* Start BIOS */
     BIOS_start();

@@ -69,6 +69,10 @@ typedef struct PinAddress {
 #define OLED_DC_PORT GPIO_PORTM_BASE        // D/C (A0) select command/data
 #define OLED_DC_PIN 3
 
+// Datasheet Serial clock cycle min 200ns -> 5MHz
+#define SSI_FREQUENCY 5000000               // SSi Frequency is 5MHz
+#define OLED_SSI_MODE SPI_POL1_PHA1   // SSI Data Transfer Mode Polarity 1 /
+#define OLED_SSI_BASE SSI2_BASE             // Configure OLED to SPI 2
 
 /* LED definitions */
 #define LED_01_PORT GPIO_PORTN_BASE

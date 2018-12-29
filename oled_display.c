@@ -20,19 +20,15 @@ static void wait_ms(uint32_t delay) {
 }
 
 void initSPI(void) {
-
     SPI_Params params;
-
     PinoutSet();
-
     SETBIT(LED01,1);
-
     SPI_Params_init(&params);
     params.transferMode = SPI_MODE_BLOCKING;    // enable blocking mode
     params.transferCallbackFxn = NULL;          // Blocking mode, no Call Back function
-    params.mode = SPI_SLAVE;                   // SPI is master
-    params.frameFormat = SPI_POL0_PHA0;         // polarity 0, rising 1 edge
-    params.bitRate = 10000;                     // bitrate 10 kHz
+    params.mode = SPI_MASTER;                   // SPI is master
+    params.frameFormat = OLED_SSI_MODE;         // polarity 1, rising 2 edge 1:1
+    params.bitRate = SSI_FREQUENCY;             // bitrate 5 MHz
     params.dataSize = 8;                        // datasize is 8 Bit
 
     handle = SPI_open(Board_SPI0, &params);
