@@ -13,6 +13,7 @@ int main(void)
     (void)ui32SysClock; // We don't really need this (yet)
 
     Board_initI2C();
+    Board_initSPI();
 
     initSPI();
     OLED_power_on_short();

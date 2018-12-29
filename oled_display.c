@@ -6,16 +6,13 @@
  */
 
 #include "local_inc/common.h"
-#include "local_inc/defines.h"
-#include "local_inc/pinout.h"
+#include "local_inc/oled_display.h"
 #include <ti/drivers/SPI.h>
 
 SPI_Handle handle;
 
 static void commandSPI(uint8_t reg, uint8_t value);
 static void wait_ms(uint32_t delay);
-extern void OLED_power_on_short(void);
-extern void initSPI(void);
 
 static void wait_ms(uint32_t delay) {
     // wait for delay in ms Frecquency 120MHz
@@ -24,15 +21,16 @@ static void wait_ms(uint32_t delay) {
 
 void initSPI(void) {
 
+    SPI_Params params;
+
     PinoutSet();
-    Board_initSPI();
+
     SETBIT(LED01,1);
 
-    SPI_Params params;
     SPI_Params_init(&params);
     params.transferMode = SPI_MODE_BLOCKING;    // enable blocking mode
-    params.transferTimeout = ~0;                // wait forever
-    params.mode = SPI_MASTER;                   // SPI is master
+    params.transferCallbackFxn = NULL;          // Blocking mode, no Call Back function
+    params.mode = SPI_SLAVE;                   // SPI is master
     params.frameFormat = SPI_POL0_PHA0;         // polarity 0, rising 1 edge
     params.bitRate = 10000;                     // bitrate 10 kHz
     params.dataSize = 8;                        // datasize is 8 Bit
@@ -42,7 +40,7 @@ void initSPI(void) {
         System_printf("SPI2 did not open.");
         System_flush();
     } else {
-        System_printf("SPI2 has handle at address: %u.", handle);
+        System_printf("SPI2 has handle at address: %p.\n", handle);
         System_flush();
     }
 
@@ -74,7 +72,7 @@ void commandSPI(uint8_t reg, uint8_t value) {
 
     txBuf[0] = reg;
     SPI_Transaction spiTransaction;
-    spiTransaction.count = 2;
+    spiTransaction.count = 8;       // Datasize 8 Bits
     spiTransaction.txBuf = txBuf;
     spiTransaction.rxBuf = NULL;
 
