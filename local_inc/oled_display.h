@@ -9,6 +9,9 @@
 #ifndef OLED_DISPLAY_H_
 #define OLED_DISPLAY_H_
 
+#include "common.h"
+
+// switch between ssi2 port and ssi3 port in case of necessary
 #define SSIM_2 1
 #define SSIM_3 0
 
@@ -59,53 +62,44 @@ typedef struct PinAddress {
 #define OLED_RGB_POL 0xE1
 #define OLED_DISPLAY_MODE_CONTROL 0xE5
 
-/* Control pins for OLED Boosterpack 1*/
+
+// Control pins for OLED Boosterpack 1
 #if SSIM_2
     #define OLED_RW_PORT GPIO_PORTE_BASE        // RW Select
     #define OLED_RW_PIN 4
-
     #define OLED_RST_PORT GPIO_PORTC_BASE       // Reset
     #define OLED_RST_PIN 7
-
     #define OLED_CS_PORT GPIO_PORTH_BASE        // Chip Select
     #define OLED_CS_PIN 2
-
     #define OLED_DC_PORT GPIO_PORTM_BASE        // D/C (A0) select command/data
     #define OLED_DC_PIN 3
-
     #define OLED_SSI_BASE SSI2_BASE             // Configure OLED to SPI 2
 #endif
 
-/* Control pins for OLED Boosterpack 2 */
+// Control pins for OLED Boosterpack 2
 #if SSIM_3
     #define OLED_RW_PORT GPIO_PORTD_BASE        // RW Select
     #define OLED_RW_PIN 2
-
     #define OLED_RST_PORT GPIO_PORTP_BASE       // Reset
     #define OLED_RST_PIN 4
-
     #define OLED_CS_PORT GPIO_PORTP_BASE        // Chip Select
     #define OLED_CS_PIN 5
-
     #define OLED_DC_PORT GPIO_PORTM_BASE        // D/C (A0) select command/data
     #define OLED_DC_PIN 7
-
     #define OLED_SSI_BASE SSI3_BASE             // Configure OLED to SPI 2
 #endif
+
 // Datasheet Serial clock cycle min 200ns -> 5MHz
-#define SSI_FREQUENCY 5000000               // SSi Frequency is 5MHz
-#define OLED_SSI_MODE SPI_POL1_PHA1   // SSI Data Transfer Mode Polarity 1 /
+#define SSI_FREQUENCY 5000000                   // SSi Frequency is 5MHz
+#define OLED_SSI_MODE SPI_POL1_PHA1             // SSI Data Transfer Mode Polarity 1 /
 
 /* LED definitions */
 #define LED_01_PORT GPIO_PORTN_BASE
 #define LED_01_PIN 1
-
 #define LED_02_PORT GPIO_PORTN_BASE
 #define LED_02_PIN 0
-
 #define LED_03_PORT GPIO_PORTF_BASE
 #define LED_03_PIN 4
-
 #define LED_04_PORT GPIO_PORTF_BASE
 #define LED_04_PIN 0
 
@@ -114,19 +108,9 @@ typedef struct PinAddress {
  */
 #define SETBIT(PinAddress, bit) (GPIOPinWrite(PinAddress.port, (1 << PinAddress.pin), (bit << PinAddress.pin)))
 
-/* ******* CONSTANTS  ********** */
-/* Constant Addresses of PINS, muxing with typedefs */
-const PinAddress OLED_RST = {OLED_RST_PORT, OLED_RST_PIN};
-const PinAddress OLED_DC = {OLED_DC_PORT, OLED_DC_PIN};
-const PinAddress OLED_CS = {OLED_CS_PORT, OLED_CS_PIN};
-const PinAddress OLED_RW = {OLED_RW_PORT, OLED_RW_PIN};
 
-const PinAddress LED01  = {LED_01_PORT, LED_01_PIN};
-const PinAddress LED02  = {LED_02_PORT, LED_02_PIN};
-const PinAddress LED03  = {LED_03_PORT, LED_03_PIN};
-const PinAddress LED04  = {LED_04_PORT, LED_04_PIN};
 /* ******* FORWARD DECLARATIONS  ********** */
-extern void initSPI(void);
-
+extern void initSPI(uint32_t systemFrequency);
+extern void setup_power_on_task(xdc_String name);
 
 #endif /* OLED_DISPLAY_H_ */

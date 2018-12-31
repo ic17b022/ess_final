@@ -4,6 +4,7 @@
 
 // include all common headers
 #include "local_inc/common.h"
+#include "local_inc/oled_display.h"
 
 int main(void)
 {
@@ -15,9 +16,10 @@ int main(void)
     Board_initI2C();
     Board_initSPI();
 
-    initSPI();
+    // init the SPI with the actual system clock
+    initSPI(ui32SysClock);
 
-    setup_power_on_short_task("Startup_Oled");
+    setup_power_on_task("Startup_Oled");
     System_printf("Created Startup Oled Task\n");
     System_flush();
     /* Start BIOS */

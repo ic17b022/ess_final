@@ -5,19 +5,30 @@
  *      Author: marcaurel
  */
 
-#include "local_inc/common.h"
 #include "local_inc/oled_display.h"
-#include <ti/drivers/SPI.h>
 
 static SPI_Handle handle;
 static uint32_t ui32SysClkFreq;
 
+/* ******* CONSTANTS  ********** */
+/* Constant Addresses of PINS, muxing with typedefs */
+const PinAddress OLED_RST = {OLED_RST_PORT, OLED_RST_PIN};
+const PinAddress OLED_DC = {OLED_DC_PORT, OLED_DC_PIN};
+const PinAddress OLED_CS = {OLED_CS_PORT, OLED_CS_PIN};
+const PinAddress OLED_RW = {OLED_RW_PORT, OLED_RW_PIN};
+
+const PinAddress LED01  = {LED_01_PORT, LED_01_PIN};
+const PinAddress LED02  = {LED_02_PORT, LED_02_PIN};
+const PinAddress LED03  = {LED_03_PORT, LED_03_PIN};
+const PinAddress LED04  = {LED_04_PORT, LED_04_PIN};
+
 static void commandSPI(uint8_t reg, uint8_t value);
+//static void transferSPI(uint8_t reg, uint8_t value);
 static void wait_ms(uint32_t delay);
 static void OLED_power_on(void);
 static void OLED_power_on_short(void);
 static void wait_ms(uint32_t delay) {
-    // wait for delay in ms Frecquency 120MHz
+    // wait for delay in ms Frequency 120MHz
     SysCtlDelay(ui32SysClkFreq / 1000 * delay);
 }
 
@@ -25,9 +36,9 @@ static void wait_ms(uint32_t delay) {
 void Pinmux (void) {
     SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOF);    // LED 03 + LED04
     SysCtlPeripheralEnable(SYSCTL_PERIPH_GPION);
+
     /* Control pins for OLED Boosterpack 1*/
 #if SSIM_2
-
     // Init the SPI2 as master
     SysCtlPeripheralEnable(SYSCTL_PERIPH_SSI2);  //Enable ssi2
     SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOD); //Enable PORT D GPIO to be used with ssi2 data and frame signals
@@ -64,6 +75,7 @@ void Pinmux (void) {
     SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOD);    // AN Booster   ->  D3 OLED (PD2)
     SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOP);    // RST Booster  ->  RST OLED (PP4) + CS Booster   ->  CSB OLED (PP5)
     SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOM);    // PWM Booster  ->  A0 OLED (PM7)
+
 #endif
 
 #if SSIM_3
@@ -73,10 +85,10 @@ void Pinmux (void) {
     GPIOPinTypeGPIOOutput(GPIO_PORTM_BASE, GPIO_PIN_7);
 
     GPIOPinConfigure(GPIO_PQ0_SSI3CLK);
-    // GPIOPinConfigure(GPIO_PQ1_SSI2FSS);
+    // GPIOPinConfigure(GPIO_PQ1_SSI3FSS);
     GPIOPinConfigure(GPIO_PQ2_SSI3XDAT0);
     GPIOPinConfigure(GPIO_PQ3_SSI3XDAT1);
-    GPIOPinTypeSSI(GPIO_PORTD_BASE,GPIO_PIN_0|GPIO_PIN_1|GPIO_PIN_3);
+    GPIOPinTypeSSI(GPIO_PORTD_BASE,GPIO_PIN_0|GPIO_PIN_2|GPIO_PIN_3);
 #endif
 
     SSIClockSourceSet(OLED_SSI_BASE, SSI_CLOCK_SYSTEM);
@@ -84,8 +96,8 @@ void Pinmux (void) {
     SSIEnable(OLED_SSI_BASE);
 }
 
-void initSPI(void) {
-    ui32SysClkFreq = 120000000;     //! @Todo: Change the system clock to a dynamic value
+extern void initSPI(uint32_t systemFrequency) {
+    ui32SysClkFreq = systemFrequency;
     Pinmux();                       // Do all necessary pin muxing
 
     SPI_Params params;
@@ -106,20 +118,20 @@ void initSPI(void) {
         System_printf("SPI2 has handle at address: %p.\n", handle);
         System_flush();
     }
-
+    SETBIT(OLED_CS, 1);             // Set Chip select to high, not seleted
 }
-extern void setup_power_on_short_task(xdc_String name) {
+extern void setup_power_on_task(xdc_String name) {
     Task_Params taskLedParams;
     Task_Handle taskLed;
     Error_Block eb;
-    /* Create OLED startup task with priroity 15*/
+    /* Create OLED startup task with priority 15*/
     Error_init(&eb);
     Task_Params_init(&taskLedParams);
     taskLedParams.instance->name = name;
     taskLedParams.stackSize = 1024; /* stack in bytes */
     taskLedParams.priority = 15; /* 0-15 (15 is highest priority on default -> see RTOS Task configuration) */
 
-    taskLed = Task_create((Task_FuncPtr)OLED_power_on_short, &taskLedParams, &eb);
+    taskLed = Task_create((Task_FuncPtr)OLED_power_on, &taskLedParams, &eb);
     if (taskLed == NULL) {
         System_abort("TaskLed create failed");
     }
@@ -208,23 +220,59 @@ static void OLED_power_on(void) {
     /* Display ON */
     commandSPI(OLED_DISPLAY_ON_OFF,0x01);
 }
-// Send command to OLED
+
+// Send command wit transfer
 static void commandSPI(uint8_t reg, uint8_t value) {
+    uint8_t txBuf[1];
+    bool retVal;
+    txBuf[0] = reg;
+    SPI_Transaction spiTrans;
+    spiTrans.count = 1;        // send 1 Byte
+    spiTrans.txBuf = txBuf;
+    spiTrans.rxBuf = NULL;
+
     SETBIT(OLED_RW, 0); // Set the peripheral to write -> mcu write to periph
     // Write to register
     SETBIT(OLED_CS, 0);
     SETBIT(OLED_DC, 0);
-    SSIDataPut(OLED_SSI_BASE, reg);
-    while(SSIBusy(OLED_SSI_BASE));
+    retVal = SPI_transfer(handle, &spiTrans);
+    if (!retVal) {
+        System_printf("Register transfer failed.\n");
+        System_flush();
+    } else {
+        System_printf("Register %u transferred.\n", txBuf[0]);
+        System_flush();
+    }
     SETBIT(OLED_CS, 1);
 
+    txBuf[0] = value;
     // Write into the register
     SETBIT(OLED_CS, 0);
     SETBIT(OLED_DC, 1);
-    SSIDataPut(OLED_SSI_BASE, value);
-    while(SSIBusy(OLED_SSI_BASE));
+    retVal = SPI_transfer(handle, &spiTrans);
+    if (!retVal) {
+        System_printf("Value transfer failed.\n");
+        System_flush();
+    } else {
+        System_printf("Value %u transferred.\n", txBuf[0]);
+        System_flush();
+    }
     SETBIT(OLED_CS, 1);
 }
-
-
-
+//// Send command to OLED
+//static void commandSPI(uint8_t reg, uint8_t value) {
+//    SETBIT(OLED_RW, 0); // Set the peripheral to write -> mcu write to periph
+//    // Write to register
+//    SETBIT(OLED_CS, 0);
+//    SETBIT(OLED_DC, 0);
+//    SSIDataPut(OLED_SSI_BASE, reg);
+//    while(SSIBusy(OLED_SSI_BASE));
+//    SETBIT(OLED_CS, 1);
+//
+//    // Write into the register
+//    SETBIT(OLED_CS, 0);
+//    SETBIT(OLED_DC, 1);
+//    SSIDataPut(OLED_SSI_BASE, value);
+//    while(SSIBusy(OLED_SSI_BASE));
+//    SETBIT(OLED_CS, 1);
+//}

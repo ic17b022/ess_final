@@ -26,27 +26,21 @@
 /* Instrumentation headers */
 #include <ti/uia/runtime/LogSnapshot.h>
 
+/* Driver Headers */
+#include <ti/drivers/SPI.h>     // supplies definitions for spi interface
 /* Driverlib headers */
 #include <driverlib/gpio.h>
-#include <inc/hw_gpio.h>
 #include <driverlib/pin_map.h>      // Delivers the pin map defines
-#include <inc/hw_memmap.h>
-#include <inc/hw_types.h>
+#include <driverlib/ssi.h>      // Supplies the defines for SSI setup
 #include <driverlib/rom.h>
 #include <driverlib/rom_map.h>
 #include <driverlib/sysctl.h>
 #include <inc/hw_memmap.h> // Supplies GPIO_PORTx_BASE
-#include <driverlib/ssi.h>      // Supplies the difnes for SSI setup
+#include <inc/hw_gpio.h>
+#include <inc/hw_types.h>
 
 /* Board Header files */
 #include <Board.h>
 #include <EK_TM4C1294XL.h>
-
-/* Peripheral Header files */
-
-
-/* Application headers */
-
-
 
 #endif /* COMMON_H_ */
