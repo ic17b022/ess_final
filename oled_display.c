@@ -26,10 +26,10 @@ static void commandSPI(uint8_t reg, uint8_t value);
 //static void transferSPI(uint8_t reg, uint8_t value);
 static void wait_ms(uint32_t delay);
 static void OLED_power_on(void);
-static void OLED_power_on_short(void);
+static void OLED_power_off(void);
 static void wait_ms(uint32_t delay) {
     // wait for delay in ms Frequency 120MHz
-    SysCtlDelay(ui32SysClkFreq / 1000 * delay);
+    SysCtlDelay(ui32SysClkFreq / 3000 * delay);
 }
 
 /* Common */
@@ -70,6 +70,7 @@ void Pinmux (void) {
 
     SSIClockSourceSet(OLED_SSI_BASE, SSI_CLOCK_SYSTEM);
     SSIConfigSetExpClk(OLED_SSI_BASE, ui32SysClkFreq, OLED_SSI_MODE, SSI_MODE_MASTER, SSI_FREQUENCY, 8);
+    SSIAdvModeSet(OLED_SSI_BASE, SSI_ADV_MODE_LEGACY);      // Operation in
     SSIEnable(OLED_SSI_BASE);
 }
 
@@ -113,23 +114,6 @@ extern void setup_power_on_task(xdc_String name) {
         System_abort("TaskLed create failed");
     }
 }
-static void OLED_power_on_short(void) {
-    // (1) Power ON VDD, VDDIO.
-    // (2) After VDD, VDDIO become stable and wait for 100ms(t1),
-    //      set RSTB pin LOW (logic low) for at least 1ms (t2)
-    //      and then HIGH(logic high).
-    // (3) After set RSTB pin HIGH (logic high), wait for at least 50ms (t3). Then Power ON VCC_C
-    // (4) After VCC_C become stable, set register 0x02 with value 0x01
-    //      for display ON.
-    //      Data/Scan will be ON after 200ms (tAF).
-    SETBIT(LED01,1);
-    wait_ms(100);
-    SETBIT(OLED_RST, 0);
-    wait_ms(5);
-    SETBIT(OLED_RST, 1);
-    wait_ms(50);
-    commandSPI(OLED_DISPLAY_ON_OFF, 0x01);
-}
 
 static void OLED_power_on(void) {
     // wait for 100ms
@@ -145,6 +129,8 @@ static void OLED_power_on(void) {
     commandSPI(OLED_SOFT_RESET, 0x00);
     /* Standby ON/OFF */
     commandSPI(OLED_STANDBY_ON_OFF, 0x01);  // Standby ON
+    wait_ms(5);           // wait 5 ms
+    commandSPI(OLED_STANDBY_ON_OFF, 0x00);  // Standby OFF
     wait_ms(5);           // wait 5 ms
     /* Set Oscillator operation */
     commandSPI(OLED_ANALOG_CONTROL,0x00);          // using external resistor and internal OSC
@@ -198,58 +184,63 @@ static void OLED_power_on(void) {
     commandSPI(OLED_DISPLAY_ON_OFF,0x01);
 }
 
-// Send command wit transfer
-static void commandSPI(uint8_t reg, uint8_t value) {
-    uint8_t txBuf[1];
-    bool retVal;
-    txBuf[0] = reg;
-    SPI_Transaction spiTrans;
-    spiTrans.count = 1;        // send 1 Byte
-    spiTrans.txBuf = txBuf;
-    spiTrans.rxBuf = NULL;
-
-    SETBIT(OLED_RW, 0); // Set the peripheral to write -> mcu write to periph
-    // Write to register
-    SETBIT(OLED_CS, 0);
-    SETBIT(OLED_DC, 0);
-    retVal = SPI_transfer(handle, &spiTrans);
-    if (!retVal) {
-        System_printf("Register transfer failed.\n");
-        System_flush();
-    } else {
-        System_printf("Register %u transferred.\n", txBuf[0]);
-        System_flush();
-    }
-    SETBIT(OLED_CS, 1);
-
-    txBuf[0] = value;
-    // Write into the register
-    SETBIT(OLED_CS, 0);
-    SETBIT(OLED_DC, 1);
-    retVal = SPI_transfer(handle, &spiTrans);
-    if (!retVal) {
-        System_printf("Value transfer failed.\n");
-        System_flush();
-    } else {
-        System_printf("Value %u transferred.\n", txBuf[0]);
-        System_flush();
-    }
-    SETBIT(OLED_CS, 1);
+static void OLED_power_off(void) {
+    // Set STANDBY_ON_OFF
+    commandSPI(OLED_STANDBY_ON_OFF, 0x01);  // Standby ON
+        wait_ms(5);           // wait 5 ms
 }
-//// Send command to OLED
+//// Send command with transfer, outcommented doing with tivaware
 //static void commandSPI(uint8_t reg, uint8_t value) {
+//    uint8_t txBuf[1];
+//    bool retVal;
+//    txBuf[0] = reg;
+//    SPI_Transaction spiTrans;
+//    spiTrans.count = 1;        // send 1 Byte
+//    spiTrans.txBuf = txBuf;
+//    spiTrans.rxBuf = NULL;
+//
 //    SETBIT(OLED_RW, 0); // Set the peripheral to write -> mcu write to periph
 //    // Write to register
 //    SETBIT(OLED_CS, 0);
 //    SETBIT(OLED_DC, 0);
-//    SSIDataPut(OLED_SSI_BASE, reg);
-//    while(SSIBusy(OLED_SSI_BASE));
+//    retVal = SPI_transfer(handle, &spiTrans);
+//    if (!retVal) {
+//        System_printf("Register transfer failed.\n");
+//        System_flush();
+//    } else {
+//        System_printf("Register %u transferred.\n", txBuf[0]);
+//        System_flush();
+//    }
 //    SETBIT(OLED_CS, 1);
 //
 //    // Write into the register
+//    txBuf[0] = value;
 //    SETBIT(OLED_CS, 0);
 //    SETBIT(OLED_DC, 1);
-//    SSIDataPut(OLED_SSI_BASE, value);
-//    while(SSIBusy(OLED_SSI_BASE));
+//    retVal = SPI_transfer(handle, &spiTrans);
+//    if (!retVal) {
+//        System_printf("Value transfer failed.\n");
+//        System_flush();
+//    } else {
+//        System_printf("Value %u transferred.\n", txBuf[0]);
+//        System_flush();
+//    }
 //    SETBIT(OLED_CS, 1);
 //}
+// Send command to OLED
+static void commandSPI(uint8_t reg, uint8_t value) {
+    SETBIT(OLED_RW, 0); // Set the peripheral to write -> mcu write to periph
+    // Write to register
+    SETBIT(OLED_CS, 0);
+    SETBIT(OLED_DC, 0);
+    SSIDataPut(OLED_SSI_BASE, reg);
+    while(SSIBusy(OLED_SSI_BASE));
+    SETBIT(OLED_CS, 1);
+
+    // Write into the register
+    SETBIT(OLED_CS, 0);
+    SETBIT(OLED_DC, 1);
+    SSIDataPut(OLED_SSI_BASE, value);
+    while(SSIBusy(OLED_SSI_BASE));
+    SETBIT(OLED_CS, 1);
+}

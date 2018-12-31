@@ -18,7 +18,6 @@ int main(void)
 
     // init the SPI with the actual system clock
     initSPI(ui32SysClock);
-
     setup_power_on_task("Startup_Oled");
     System_printf("Created Startup Oled Task\n");
     System_flush();
