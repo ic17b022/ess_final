@@ -65,28 +65,28 @@ typedef struct PinAddress {
 
 // Control pins for OLED Boosterpack 1
 #if SSIM_2
-    #define OLED_RW_PORT GPIO_PORTE_BASE        // RW Select
-    #define OLED_RW_PIN 4
-    #define OLED_RST_PORT GPIO_PORTC_BASE       // Reset
-    #define OLED_RST_PIN 7
-    #define OLED_CS_PORT GPIO_PORTH_BASE        // Chip Select
-    #define OLED_CS_PIN 2
-    #define OLED_DC_PORT GPIO_PORTM_BASE        // D/C (A0) select command/data
-    #define OLED_DC_PIN 3
-    #define OLED_SSI_BASE SSI2_BASE             // Configure OLED to SPI 2
+#define OLED_RW_PORT GPIO_PORTE_BASE        // RW Select
+#define OLED_RW_PIN 4
+#define OLED_RST_PORT GPIO_PORTC_BASE       // Reset
+#define OLED_RST_PIN 7
+#define OLED_CS_PORT GPIO_PORTH_BASE        // Chip Select
+#define OLED_CS_PIN 2
+#define OLED_DC_PORT GPIO_PORTM_BASE        // D/C (A0) select command/data
+#define OLED_DC_PIN 3
+#define OLED_SSI_BASE SSI2_BASE             // Configure OLED to SPI 2
 #endif
 
 // Control pins for OLED Boosterpack 2
 #if SSIM_3
-    #define OLED_RW_PORT GPIO_PORTD_BASE        // RW Select
-    #define OLED_RW_PIN 2
-    #define OLED_RST_PORT GPIO_PORTP_BASE       // Reset
-    #define OLED_RST_PIN 4
-    #define OLED_CS_PORT GPIO_PORTP_BASE        // Chip Select
-    #define OLED_CS_PIN 5
-    #define OLED_DC_PORT GPIO_PORTM_BASE        // D/C (A0) select command/data
-    #define OLED_DC_PIN 7
-    #define OLED_SSI_BASE SSI3_BASE             // Configure OLED to SPI 2
+#define OLED_RW_PORT GPIO_PORTD_BASE        // RW Select
+#define OLED_RW_PIN 2
+#define OLED_RST_PORT GPIO_PORTP_BASE       // Reset
+#define OLED_RST_PIN 4
+#define OLED_CS_PORT GPIO_PORTP_BASE        // Chip Select
+#define OLED_CS_PIN 5
+#define OLED_DC_PORT GPIO_PORTM_BASE        // D/C (A0) select command/data
+#define OLED_DC_PIN 7
+#define OLED_SSI_BASE SSI3_BASE             // Configure OLED to SPI 2
 #endif
 
 // Datasheet Serial clock cycle min 200ns -> 5MHz

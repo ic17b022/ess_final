@@ -12,15 +12,15 @@ static uint32_t ui32SysClkFreq;
 
 /* ******* CONSTANTS  ********** */
 /* Constant Addresses of PINS, muxing with typedefs */
-const PinAddress OLED_RST = {OLED_RST_PORT, OLED_RST_PIN};
-const PinAddress OLED_DC = {OLED_DC_PORT, OLED_DC_PIN};
-const PinAddress OLED_CS = {OLED_CS_PORT, OLED_CS_PIN};
-const PinAddress OLED_RW = {OLED_RW_PORT, OLED_RW_PIN};
+static const PinAddress OLED_RST = {OLED_RST_PORT, OLED_RST_PIN};
+static const PinAddress OLED_DC = {OLED_DC_PORT, OLED_DC_PIN};
+static const PinAddress OLED_CS = {OLED_CS_PORT, OLED_CS_PIN};
+static const PinAddress OLED_RW = {OLED_RW_PORT, OLED_RW_PIN};
 
-const PinAddress LED01  = {LED_01_PORT, LED_01_PIN};
-const PinAddress LED02  = {LED_02_PORT, LED_02_PIN};
-const PinAddress LED03  = {LED_03_PORT, LED_03_PIN};
-const PinAddress LED04  = {LED_04_PORT, LED_04_PIN};
+static const PinAddress LED01  = {LED_01_PORT, LED_01_PIN};
+static const PinAddress LED02  = {LED_02_PORT, LED_02_PIN};
+static const PinAddress LED03  = {LED_03_PORT, LED_03_PIN};
+static const PinAddress LED04  = {LED_04_PORT, LED_04_PIN};
 
 static void commandSPI(uint8_t reg, uint8_t value);
 //static void transferSPI(uint8_t reg, uint8_t value);
@@ -35,60 +35,37 @@ static void wait_ms(uint32_t delay) {
 /* Common */
 void Pinmux (void) {
     SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOF);    // LED 03 + LED04
-    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPION);
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPION);    // LED 01 + LED02
+    // Confgure the GPIO Pins for the onboard LEDs
+    GPIOPinTypeGPIOOutput(GPIO_PORTN_BASE, GPIO_PIN_0 | GPIO_PIN_1);
+    GPIOPinTypeGPIOOutput(GPIO_PORTF_BASE, GPIO_PIN_0 | GPIO_PIN_4);
 
     /* Control pins for OLED Boosterpack 1*/
 #if SSIM_2
-    // Init the SPI2 as master
-    SysCtlPeripheralEnable(SYSCTL_PERIPH_SSI2);  //Enable ssi2
-    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOD); //Enable PORT D GPIO to be used with ssi2 data and frame signals
-
     // Init the 4 necessary GPIO pins to drive the SSI2
     SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOE);    // AN Booster   ->  D3 OLED (PE4)
     SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOC);    // RST Booster  ->  RST OLED (PC7)
     SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOH);    // CS Booster   ->  CSB OLED (PH2)
     SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOM);    // PWM Booster  ->  A0 OLED (PM3)
-#endif
 
-#if SSIM_2
+    // Configure the necessary GPIO Pin to drive the SPI2
     GPIOPinTypeGPIOOutput(GPIO_PORTE_BASE, GPIO_PIN_4);
     GPIOPinTypeGPIOOutput(GPIO_PORTC_BASE, GPIO_PIN_7);
     GPIOPinTypeGPIOOutput(GPIO_PORTH_BASE, GPIO_PIN_2);
     GPIOPinTypeGPIOOutput(GPIO_PORTM_BASE, GPIO_PIN_3);
-
-    GPIOPinConfigure(GPIO_PD3_SSI2CLK);
-    // GPIOPinConfigure(GPIO_PD2_SSI2FSS);
-    GPIOPinConfigure(GPIO_PD1_SSI2XDAT0);
-    GPIOPinConfigure(GPIO_PD0_SSI2XDAT1);
-    GPIOPinTypeSSI(GPIO_PORTD_BASE,GPIO_PIN_0|GPIO_PIN_1|GPIO_PIN_3);
 #endif
 
-    GPIOPinTypeGPIOOutput(GPIO_PORTN_BASE, GPIO_PIN_0 | GPIO_PIN_1);
-    GPIOPinTypeGPIOOutput(GPIO_PORTF_BASE, GPIO_PIN_0 | GPIO_PIN_4);
-    /* Control pins for OLED Boosterpack 2 */
+    // Configure the necessary GPIO Pin to drive the SPI3
 #if SSIM_3
-    // Init the SPI3 as master
-    SysCtlPeripheralEnable(SYSCTL_PERIPH_SSI3);  //Enable ssi2
-    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOQ); //Enable PORT Q GPIO to be used with ssi3 data and frame signals
 
     // Init the 4 necessary GPIO pins to drive the SSI3
     SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOD);    // AN Booster   ->  D3 OLED (PD2)
     SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOP);    // RST Booster  ->  RST OLED (PP4) + CS Booster   ->  CSB OLED (PP5)
     SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOM);    // PWM Booster  ->  A0 OLED (PM7)
 
-#endif
-
-#if SSIM_3
-
     GPIOPinTypeGPIOOutput(GPIO_PORTD_BASE, GPIO_PIN_2);
     GPIOPinTypeGPIOOutput(GPIO_PORTP_BASE, GPIO_PIN_4 | GPIO_PIN_5);
     GPIOPinTypeGPIOOutput(GPIO_PORTM_BASE, GPIO_PIN_7);
-
-    GPIOPinConfigure(GPIO_PQ0_SSI3CLK);
-    // GPIOPinConfigure(GPIO_PQ1_SSI3FSS);
-    GPIOPinConfigure(GPIO_PQ2_SSI3XDAT0);
-    GPIOPinConfigure(GPIO_PQ3_SSI3XDAT1);
-    GPIOPinTypeSSI(GPIO_PORTD_BASE,GPIO_PIN_0|GPIO_PIN_2|GPIO_PIN_3);
 #endif
 
     SSIClockSourceSet(OLED_SSI_BASE, SSI_CLOCK_SYSTEM);
