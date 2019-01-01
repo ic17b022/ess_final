@@ -6,6 +6,8 @@
  */
 
 #include "local_inc/oled_display.h"
+#include "resources/image.h"
+
 
 static SPI_Handle handle;
 static uint32_t ui32SysClkFreq;
@@ -22,21 +24,26 @@ static const PinAddress LED02  = {LED_02_PORT, LED_02_PIN};
 static const PinAddress LED03  = {LED_03_PORT, LED_03_PIN};
 static const PinAddress LED04  = {LED_04_PORT, LED_04_PIN};
 
+// Forward Declarations
 static void commandSPI(uint8_t reg, uint8_t value);
-//static void transferSPI(uint8_t reg, uint8_t value);
+static void writeOLED_indexRegister(uint8_t reg);
+static void writeOLED_dataRegister(uint8_t data);
 static void wait_ms(uint32_t delay);
+static void OLED_Fxn(void);
 static void OLED_power_on(void);
 static void OLED_power_off(void);
+static void createBackground(void);
+
 static void wait_ms(uint32_t delay) {
     // wait for delay in ms Frequency 120MHz
     SysCtlDelay(ui32SysClkFreq / 3000 * delay);
 }
 
-/* Common */
+// Confgure the GPIO Pins for the onboard LEDs
 void Pinmux (void) {
     SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOF);    // LED 03 + LED04
     SysCtlPeripheralEnable(SYSCTL_PERIPH_GPION);    // LED 01 + LED02
-    // Confgure the GPIO Pins for the onboard LEDs
+
     GPIOPinTypeGPIOOutput(GPIO_PORTN_BASE, GPIO_PIN_0 | GPIO_PIN_1);
     GPIOPinTypeGPIOOutput(GPIO_PORTF_BASE, GPIO_PIN_0 | GPIO_PIN_4);
 
@@ -109,12 +116,17 @@ extern void setup_power_on_task(xdc_String name) {
     taskLedParams.stackSize = 1024; /* stack in bytes */
     taskLedParams.priority = 15; /* 0-15 (15 is highest priority on default -> see RTOS Task configuration) */
 
-    taskLed = Task_create((Task_FuncPtr)OLED_power_on, &taskLedParams, &eb);
+    taskLed = Task_create((Task_FuncPtr)OLED_Fxn, &taskLedParams, &eb);
     if (taskLed == NULL) {
         System_abort("TaskLed create failed");
     }
 }
 
+static void OLED_Fxn(void) {
+    // power on OLED
+    OLED_power_on();
+    createBackground();
+}
 static void OLED_power_on(void) {
     // wait for 100ms
     wait_ms(100);
@@ -150,7 +162,7 @@ static void OLED_power_on(void) {
     /* Set MCU Interface */
     commandSPI(OLED_CPU_IF,0x00);                 // MPU External interface mode, 8bits
     /* Set Memory Read/Write mode */
-    commandSPI(OLED_MEMORY_WRITE_READ,0x00);
+    commandSPI(OLED_MEMORY_WRITE_READ,0x01);
     /* Set row scan direction */
     commandSPI(OLED_ROW_SCAN_DIRECTION,0x00);     // Column : 0 --> Max, Row : 0 --> Max
     /* Set row scan mode */
@@ -182,53 +194,41 @@ static void OLED_power_on(void) {
     commandSPI(OLED_DISPLAYSTART_Y,0x00);
     /* Display ON */
     commandSPI(OLED_DISPLAY_ON_OFF,0x01);
+    System_printf("OLED powered on.\n");
+    System_flush();
 }
 
 static void OLED_power_off(void) {
     // Set STANDBY_ON_OFF
-    commandSPI(OLED_STANDBY_ON_OFF, 0x01);  // Standby ON
-        wait_ms(5);           // wait 5 ms
+    commandSPI(OLED_DISPLAY_ON_OFF, 0x00);  // Display OFF
+    wait_ms(5);           // wait 5 ms
 }
-//// Send command with transfer, outcommented doing with tivaware
-//static void commandSPI(uint8_t reg, uint8_t value) {
-//    uint8_t txBuf[1];
-//    bool retVal;
-//    txBuf[0] = reg;
-//    SPI_Transaction spiTrans;
-//    spiTrans.count = 1;        // send 1 Byte
-//    spiTrans.txBuf = txBuf;
-//    spiTrans.rxBuf = NULL;
-//
-//    SETBIT(OLED_RW, 0); // Set the peripheral to write -> mcu write to periph
-//    // Write to register
-//    SETBIT(OLED_CS, 0);
-//    SETBIT(OLED_DC, 0);
-//    retVal = SPI_transfer(handle, &spiTrans);
-//    if (!retVal) {
-//        System_printf("Register transfer failed.\n");
-//        System_flush();
-//    } else {
-//        System_printf("Register %u transferred.\n", txBuf[0]);
-//        System_flush();
-//    }
-//    SETBIT(OLED_CS, 1);
-//
-//    // Write into the register
-//    txBuf[0] = value;
-//    SETBIT(OLED_CS, 0);
-//    SETBIT(OLED_DC, 1);
-//    retVal = SPI_transfer(handle, &spiTrans);
-//    if (!retVal) {
-//        System_printf("Value transfer failed.\n");
-//        System_flush();
-//    } else {
-//        System_printf("Value %u transferred.\n", txBuf[0]);
-//        System_flush();
-//    }
-//    SETBIT(OLED_CS, 1);
-//}
-// Send command to OLED
-static void commandSPI(uint8_t reg, uint8_t value) {
+
+static void createBackground(void) {
+    uint16_t i;
+    uint8_t blue = 15;
+    // enable DDRAM for writing
+    writeOLED_indexRegister(OLED_DDRAM_DATA_ACCESS_PORT);
+    // loop through all pixel of oled, register is 8 bit wide, but has to be 16, so double it!
+    for (i = 1; i <= OLED_DISPLAY_X_MAX * OLED_DISPLAY_Y_MAX * 2; i++) {
+//        if (i % 2 == 0) {
+//            writeOLED_dataRegister(blue);  // Wite only Blue
+//        } else {
+//            writeOLED_dataRegister(0);
+//        }
+        //writeOLED_dataRegister(logo_image.pixel_data[i]);
+        writeOLED_dataRegister(cool_image.pixel_data[i]);
+    }
+}
+// Convert a 24Bit(8:8:8) RGB to 16 Bit RGB (5:6:5) Pixel
+static uint16_t createColorPixelFromRGB(uint8_t red, uint8_t green, uint8_t blue) {
+    uint16_t result = 0;
+    result = red / 5 << 10;
+    result |= (green / 6) << 5;;
+    result |= blue / 5;
+    return result;
+}
+static void writeOLED_indexRegister(uint8_t reg) {
     SETBIT(OLED_RW, 0); // Set the peripheral to write -> mcu write to periph
     // Write to register
     SETBIT(OLED_CS, 0);
@@ -236,11 +236,19 @@ static void commandSPI(uint8_t reg, uint8_t value) {
     SSIDataPut(OLED_SSI_BASE, reg);
     while(SSIBusy(OLED_SSI_BASE));
     SETBIT(OLED_CS, 1);
+}
 
-    // Write into the register
+static void writeOLED_dataRegister(uint8_t data) {
     SETBIT(OLED_CS, 0);
     SETBIT(OLED_DC, 1);
-    SSIDataPut(OLED_SSI_BASE, value);
+    SSIDataPut(OLED_SSI_BASE, data);
     while(SSIBusy(OLED_SSI_BASE));
     SETBIT(OLED_CS, 1);
+}
+// Send command to OLED
+static void commandSPI(uint8_t reg, uint8_t value) {
+    // Write to register
+    writeOLED_indexRegister(reg);
+    // Write into the register
+    writeOLED_dataRegister(value);
 }
