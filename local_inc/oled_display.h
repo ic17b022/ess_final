@@ -65,6 +65,7 @@ typedef struct PinAddress {
 #define OLED_DISPLAY_X_MAX 96
 #define OLED_DISPLAY_Y_MAX 96
 #define OLED_DISPLAY_MAX_PIXEL 9216
+#define OLED_DISPLAY_BYTES_PIXEL 2
 
 // Control pins for OLED Boosterpack 1
 #if SSIM_2

@@ -32,7 +32,10 @@ static void wait_ms(uint32_t delay);
 static void OLED_Fxn(void);
 static void OLED_power_on(void);
 static void OLED_power_off(void);
-static void createBackground(void);
+static void createBackgroundFromImage(image screenimage);
+static void createBackgroundFromColor(uint32_t rgbColor);
+static uint16_t createColorPixelFromRGB(uint32_t rgbData);
+
 
 static void wait_ms(uint32_t delay) {
     // wait for delay in ms Frequency 120MHz
@@ -121,11 +124,71 @@ extern void setup_power_on_task(xdc_String name) {
         System_abort("TaskLed create failed");
     }
 }
-
 static void OLED_Fxn(void) {
     // power on OLED
     OLED_power_on();
-    createBackground();
+    createBackgroundFromImage(logo_image);
+   // createBackgroundFromColor(0x00FF00);
+}
+static void OLED_power_off(void) {
+    // Set STANDBY_ON_OFF
+    commandSPI(OLED_DISPLAY_ON_OFF, 0x00);  // Display OFF
+    wait_ms(5);           // wait 5 ms
+}
+static void createBackgroundFromColor(uint32_t rgbColor) {
+    uint8_t lowerByte, upperByte;
+    uint16_t i;
+    lowerByte = createColorPixelFromRGB(rgbColor) & 0xFF;
+    upperByte = (createColorPixelFromRGB(rgbColor) >> 8) &0xFF;
+    // enable DDRAM for writing
+    writeOLED_indexRegister(OLED_DDRAM_DATA_ACCESS_PORT);
+    // loop through all pixel of oled, register is 8 bit wide, but has to be 16, so double it!
+    for (i = 0; i < OLED_DISPLAY_X_MAX * OLED_DISPLAY_Y_MAX; i++) {
+        writeOLED_dataRegister(upperByte);  // Upper Byte first Transmission S. 10/43
+        writeOLED_dataRegister(lowerByte);
+    }
+}
+static void createBackgroundFromImage(image screenimage) {
+    uint16_t i;
+    // enable DDRAM for writing
+    writeOLED_indexRegister(OLED_DDRAM_DATA_ACCESS_PORT);
+    // loop through all pixel of oled, register is 8 bit wide, but has to be 16, so double it!
+    for (i = 1; i < (screenimage.width * screenimage.height * screenimage.bytes_per_pixel + 1); i++) {
+        writeOLED_dataRegister(screenimage.pixel_data[i]);
+    }
+}
+/// \todo check if this converting method is needed
+// Convert a 24Bit(8:8:8) RGB to 16 Bit RGB (5:6:5) Pixel
+static uint16_t createColorPixelFromRGB(uint32_t rgbData) {
+    uint16_t result = 0;
+    result = (rgbData >> 16 & 0xFF) / 5 << 11;
+    result |= (rgbData >> 8 & 0xFF) / 6 << 5;
+    result |= (rgbData & 0xFF) / 5;
+    return result;
+}
+static void writeOLED_indexRegister(uint8_t reg) {
+    SETBIT(OLED_RW, 0); // Set the peripheral to write -> mcu write to periph
+    // Write to register
+    SETBIT(OLED_CS, 0);
+    SETBIT(OLED_DC, 0);
+    SSIDataPut(OLED_SSI_BASE, reg);
+    while(SSIBusy(OLED_SSI_BASE));
+    SETBIT(OLED_CS, 1);
+}
+
+static void writeOLED_dataRegister(uint8_t data) {
+    SETBIT(OLED_CS, 0);
+    SETBIT(OLED_DC, 1);
+    SSIDataPut(OLED_SSI_BASE, data);
+    while(SSIBusy(OLED_SSI_BASE));
+    SETBIT(OLED_CS, 1);
+}
+// Send command to OLED
+static void commandSPI(uint8_t reg, uint8_t value) {
+    // Write to register
+    writeOLED_indexRegister(reg);
+    // Write into the register
+    writeOLED_dataRegister(value);
 }
 static void OLED_power_on(void) {
     // wait for 100ms
@@ -162,7 +225,7 @@ static void OLED_power_on(void) {
     /* Set MCU Interface */
     commandSPI(OLED_CPU_IF,0x00);                 // MPU External interface mode, 8bits
     /* Set Memory Read/Write mode */
-    commandSPI(OLED_MEMORY_WRITE_READ,0x01);
+    commandSPI(OLED_MEMORY_WRITE_READ,0x01);      // When MDIR0= 1, Horizontal address counter is decreased. S. Datasheet 24/43
     /* Set row scan direction */
     commandSPI(OLED_ROW_SCAN_DIRECTION,0x00);     // Column : 0 --> Max, Row : 0 --> Max
     /* Set row scan mode */
@@ -196,59 +259,4 @@ static void OLED_power_on(void) {
     commandSPI(OLED_DISPLAY_ON_OFF,0x01);
     System_printf("OLED powered on.\n");
     System_flush();
-}
-
-static void OLED_power_off(void) {
-    // Set STANDBY_ON_OFF
-    commandSPI(OLED_DISPLAY_ON_OFF, 0x00);  // Display OFF
-    wait_ms(5);           // wait 5 ms
-}
-
-static void createBackground(void) {
-    uint16_t i;
-    uint8_t blue = 15;
-    // enable DDRAM for writing
-    writeOLED_indexRegister(OLED_DDRAM_DATA_ACCESS_PORT);
-    // loop through all pixel of oled, register is 8 bit wide, but has to be 16, so double it!
-    for (i = 1; i <= OLED_DISPLAY_X_MAX * OLED_DISPLAY_Y_MAX * 2; i++) {
-//        if (i % 2 == 0) {
-//            writeOLED_dataRegister(blue);  // Wite only Blue
-//        } else {
-//            writeOLED_dataRegister(0);
-//        }
-        //writeOLED_dataRegister(logo_image.pixel_data[i]);
-        writeOLED_dataRegister(cool_image.pixel_data[i]);
-    }
-}
-// Convert a 24Bit(8:8:8) RGB to 16 Bit RGB (5:6:5) Pixel
-static uint16_t createColorPixelFromRGB(uint8_t red, uint8_t green, uint8_t blue) {
-    uint16_t result = 0;
-    result = red / 5 << 10;
-    result |= (green / 6) << 5;;
-    result |= blue / 5;
-    return result;
-}
-static void writeOLED_indexRegister(uint8_t reg) {
-    SETBIT(OLED_RW, 0); // Set the peripheral to write -> mcu write to periph
-    // Write to register
-    SETBIT(OLED_CS, 0);
-    SETBIT(OLED_DC, 0);
-    SSIDataPut(OLED_SSI_BASE, reg);
-    while(SSIBusy(OLED_SSI_BASE));
-    SETBIT(OLED_CS, 1);
-}
-
-static void writeOLED_dataRegister(uint8_t data) {
-    SETBIT(OLED_CS, 0);
-    SETBIT(OLED_DC, 1);
-    SSIDataPut(OLED_SSI_BASE, data);
-    while(SSIBusy(OLED_SSI_BASE));
-    SETBIT(OLED_CS, 1);
-}
-// Send command to OLED
-static void commandSPI(uint8_t reg, uint8_t value) {
-    // Write to register
-    writeOLED_indexRegister(reg);
-    // Write into the register
-    writeOLED_dataRegister(value);
 }
