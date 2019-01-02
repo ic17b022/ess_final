@@ -20,6 +20,8 @@ int main(void)
     initSPI(ui32SysClock);
     setup_power_on_task("Startup_Oled");
     System_printf("Created Startup Oled Task\n");
+
+
     System_flush();
     /* Start BIOS */
     BIOS_start();

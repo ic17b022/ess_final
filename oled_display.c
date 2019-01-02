@@ -1,24 +1,24 @@
-/*
- * oled_display.c
- *
- *  Created on: Dec 27, 2018
- *      Author: marcaurel
+/*! \file oled_display.c
+ *  \date Dec 27, 2018
+ *  \author Valentin Platzgummer
+ *  \brief all necessary drivers for the OLED 96x96 and the task to use it in the main thread
  */
 
 #include "local_inc/oled_display.h"
 #include "resources/image.h"
+#include "resources/font.h"
 
-
-static SPI_Handle handle;
-static uint32_t ui32SysClkFreq;
+static volatile uint32_t ui32SysClkFreq;
+static volatile SPI_Handle handle;
 
 /* ******* CONSTANTS  ********** */
-/* Constant Addresses of PINS, muxing with typedefs */
+/// \brief Constant Addresses of PINS to drive the OLED Adresses are packed into a struct
 static const PinAddress OLED_RST = {OLED_RST_PORT, OLED_RST_PIN};
 static const PinAddress OLED_DC = {OLED_DC_PORT, OLED_DC_PIN};
 static const PinAddress OLED_CS = {OLED_CS_PORT, OLED_CS_PIN};
 static const PinAddress OLED_RW = {OLED_RW_PORT, OLED_RW_PIN};
 
+/// \brief Constant Addresses of the boards LED- PINS, Adresses are packed into a struct
 static const PinAddress LED01  = {LED_01_PORT, LED_01_PIN};
 static const PinAddress LED02  = {LED_02_PORT, LED_02_PIN};
 static const PinAddress LED03  = {LED_03_PORT, LED_03_PIN};
@@ -34,7 +34,9 @@ static void OLED_power_on(void);
 static void OLED_power_off(void);
 static void createBackgroundFromImage(image screenimage);
 static void createBackgroundFromColor(uint32_t rgbColor);
-static uint16_t createColorPixelFromRGB(uint32_t rgbData);
+static color16 createColorPixelFromRGB(uint32_t rgbData);
+static color16 createColorPixelFromBW(uint8_t bw_value);
+static void drawChar(char c, uint32_t rgbColor, point origin);
 
 
 static void wait_ms(uint32_t delay) {
@@ -128,7 +130,43 @@ static void OLED_Fxn(void) {
     // power on OLED
     OLED_power_on();
     createBackgroundFromImage(logo_image);
-   // createBackgroundFromColor(0x00FF00);
+    createBackgroundFromColor(0x00FF00);
+    point origin = { 20,20 };
+    drawChar('A', 0xFF0000, origin);
+    origin.x -= 8; // Note text is drawing backwards
+    drawChar('B', 0x0000FF, origin);
+}
+// max 12 chars per line starting point is lower left corner of each char
+static void drawChar(char c, uint32_t rgbColor, point origin) {
+    // select middle of screen
+    // create font rectangle FONT_WIDTH x FONT_HEIGHT (7x13)
+    commandSPI(OLED_MEM_X1, origin.x);
+    commandSPI(OLED_MEM_X2, origin.x + FONT_WIDTH);
+    commandSPI(OLED_MEM_Y1, origin.y);
+    commandSPI(OLED_MEM_Y2, origin.y + FONT_HEIGHT);
+    // write from bottom to top
+    commandSPI(OLED_MEMORY_WRITE_READ, 0b10);
+    // enable DDRAM for writing
+    writeOLED_indexRegister(OLED_DDRAM_DATA_ACCESS_PORT);
+    uint8_t i,j,value;
+    color16 charColor = createColorPixelFromRGB(rgbColor);
+    System_printf("Drawing char: %c, code: ", c);
+    for (i = 0; i < FONT_HEIGHT; i++) {
+        value = chars[c - 0x20][i];
+        for (j = 0; j < 8; j++) {
+            if (value & 1) {
+                writeOLED_dataRegister(charColor.upperByte);
+                writeOLED_dataRegister(charColor.lowerByte);
+            } else {
+                writeOLED_dataRegister(0x00);
+                writeOLED_dataRegister(0x00);
+            }
+            value = value >> 1;
+        }
+        System_printf("%u ", chars[c - 0x20][i]);
+    }
+    System_printf("\n");
+    System_flush();
 }
 static void OLED_power_off(void) {
     // Set STANDBY_ON_OFF
@@ -136,16 +174,15 @@ static void OLED_power_off(void) {
     wait_ms(5);           // wait 5 ms
 }
 static void createBackgroundFromColor(uint32_t rgbColor) {
-    uint8_t lowerByte, upperByte;
+    color16 color;
     uint16_t i;
-    lowerByte = createColorPixelFromRGB(rgbColor) & 0xFF;
-    upperByte = (createColorPixelFromRGB(rgbColor) >> 8) &0xFF;
+    color = createColorPixelFromRGB(rgbColor);
     // enable DDRAM for writing
     writeOLED_indexRegister(OLED_DDRAM_DATA_ACCESS_PORT);
     // loop through all pixel of oled, register is 8 bit wide, but has to be 16, so double it!
     for (i = 0; i < OLED_DISPLAY_X_MAX * OLED_DISPLAY_Y_MAX; i++) {
-        writeOLED_dataRegister(upperByte);  // Upper Byte first Transmission S. 10/43
-        writeOLED_dataRegister(lowerByte);
+        writeOLED_dataRegister(color.upperByte);  // Upper Byte first Transmission S. 10/43
+        writeOLED_dataRegister(color.lowerByte);
     }
 }
 static void createBackgroundFromImage(image screenimage) {
@@ -157,14 +194,33 @@ static void createBackgroundFromImage(image screenimage) {
         writeOLED_dataRegister(screenimage.pixel_data[i]);
     }
 }
-/// \todo check if this converting method is needed
-// Convert a 24Bit(8:8:8) RGB to 16 Bit RGB (5:6:5) Pixel
-static uint16_t createColorPixelFromRGB(uint32_t rgbData) {
-    uint16_t result = 0;
+/*! \brief Convert a 24Bit(8:8:8) RGB value to 16 Bit RGB (5:6:5) Pixel value
+ * \param rgbData uint32_t color value of a pixel in 24bit RGB(8:8:8) no Alpha cannel
+ * \return color16 converted colorvalue in 16bit RGB space (5:6:5) space, divided into 2 Byte (MSB and LSB)
+ */
+static color16 createColorPixelFromRGB(uint32_t rgbData) {
+    color16 result_color;
+    uint16_t result;
     result = (rgbData >> 16 & 0xFF) / 5 << 11;
     result |= (rgbData >> 8 & 0xFF) / 6 << 5;
     result |= (rgbData & 0xFF) / 5;
-    return result;
+    result_color.upperByte = (result >> 8) & 0xFF;
+    result_color.lowerByte = result & 0xFF;
+    return result_color;
+}
+/*! \brief Convert a 8Bit grey value to 16 Bit RGB (5:6:5) Pixel value
+ * \param grey uint8_t b/w value of a pixel in 24bit RGB(8:8:8) no Alpha cannel
+ * \return color16 converted colorvalue in 16bit RGB space (5:6:5) space, divided into 2 Byte (MSB and LSB)
+ */
+static color16 createColorPixelFromBW(uint8_t bw_value) {
+    color16 result_color;
+    uint16_t result;
+    result = bw_value / 5 << 11;
+    result |= bw_value / 6 << 5;
+    result |= bw_value / 5;
+    result_color.upperByte = (result >> 8) & 0xFF;
+    result_color.lowerByte = result & 0xFF;
+    return result_color;
 }
 static void writeOLED_indexRegister(uint8_t reg) {
     SETBIT(OLED_RW, 0); // Set the peripheral to write -> mcu write to periph

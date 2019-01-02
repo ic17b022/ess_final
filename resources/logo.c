@@ -1,5 +1,5 @@
-#include "image.h"
 /* GIMP RGBA C-Source image dump (logo.c) */
+#include "image.h"
 
 const image logo_image = {
   96, 96, 2,
