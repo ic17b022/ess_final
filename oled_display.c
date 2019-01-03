@@ -7,6 +7,7 @@
 #include "local_inc/oled_display.h"
 #include "resources/image.h"
 #include "resources/font.h"
+#include "local_inc/UART_Task.h"
 
 static volatile uint32_t ui32SysClkFreq;
 static volatile SPI_Handle handle;
@@ -35,8 +36,7 @@ static void OLED_power_off(void);
 static void createBackgroundFromImage(image screenimage);
 static void createBackgroundFromColor(uint32_t rgbColor);
 static color16 createColorPixelFromRGB(uint32_t rgbData);
-static color16 createColorPixelFromBW(uint8_t bw_value);
-static void drawChar(char c, uint32_t rgbColor, point origin);
+static void drawChar(char c, uint32_t fontColor, uint32_t bgColor, point origin);
 
 
 static void wait_ms(uint32_t delay) {
@@ -110,7 +110,7 @@ extern void initSPI(uint32_t systemFrequency) {
     }
     SETBIT(OLED_CS, 1);             // Set Chip select to high, not seleted
 }
-extern void setup_power_on_task(xdc_String name) {
+extern void setup_OLED_task(xdc_String name, uint8_t priority) {
     Task_Params taskLedParams;
     Task_Handle taskLed;
     Error_Block eb;
@@ -119,7 +119,7 @@ extern void setup_power_on_task(xdc_String name) {
     Task_Params_init(&taskLedParams);
     taskLedParams.instance->name = name;
     taskLedParams.stackSize = 1024; /* stack in bytes */
-    taskLedParams.priority = 15; /* 0-15 (15 is highest priority on default -> see RTOS Task configuration) */
+    taskLedParams.priority = priority; /* 0-15 (15 is highest priority on default -> see RTOS Task configuration) */
 
     taskLed = Task_create((Task_FuncPtr)OLED_Fxn, &taskLedParams, &eb);
     if (taskLed == NULL) {
@@ -132,36 +132,47 @@ static void OLED_Fxn(void) {
     createBackgroundFromImage(logo_image);
     createBackgroundFromColor(0x00FF00);
     point origin = { 20,20 };
-    drawChar('A', 0xFF0000, origin);
-    origin.x -= 8; // Note text is drawing backwards
-    drawChar('B', 0x0000FF, origin);
+    bool sem_timeout;
+
+    while (1) {
+       sem_timeout = Semaphore_pend(sem, BIOS_WAIT_FOREVER);
+        if (!sem_timeout) {
+            System_printf("Semaphore has time out.\n");
+            System_flush();
+        }
+        drawChar(charContainer, 0xFF0000, 0x00FF00, origin);
+        origin.x += FONT_SPACING; // Note text is drawing backwards
+        }
+
 }
 // max 12 chars per line starting point is lower left corner of each char
-static void drawChar(char c, uint32_t rgbColor, point origin) {
+static void drawChar(char c, uint32_t fontColor, uint32_t bgColor, point origin) {
     // select middle of screen
-    // create font rectangle FONT_WIDTH x FONT_HEIGHT (7x13)
-    commandSPI(OLED_MEM_X1, origin.x);
-    commandSPI(OLED_MEM_X2, origin.x + FONT_WIDTH);
+    // create font rectangle FONT_WIDTH x FONT_HEIGHT (7x13), Text is drawn upside down
+    // calculate from the right margin
+    commandSPI(OLED_MEM_X1, OLED_DISPLAY_X_MAX - origin.x);
+    commandSPI(OLED_MEM_X2, OLED_DISPLAY_X_MAX -origin.x + FONT_WIDTH);
     commandSPI(OLED_MEM_Y1, origin.y);
     commandSPI(OLED_MEM_Y2, origin.y + FONT_HEIGHT);
     // write from bottom to top
-    commandSPI(OLED_MEMORY_WRITE_READ, 0b10);
+    commandSPI(OLED_MEMORY_WRITE_READ, OLED_MEMORY_WRITE_READ_HORZ_INC_VERT_DEC);
     // enable DDRAM for writing
     writeOLED_indexRegister(OLED_DDRAM_DATA_ACCESS_PORT);
     uint8_t i,j,value;
-    color16 charColor = createColorPixelFromRGB(rgbColor);
+    color16 charCol = createColorPixelFromRGB(fontColor);
+    color16 backCol = createColorPixelFromRGB(bgColor);
     System_printf("Drawing char: %c, code: ", c);
     for (i = 0; i < FONT_HEIGHT; i++) {
-        value = chars[c - 0x20][i];
-        for (j = 0; j < 8; j++) {
+        value = chars[c - FONT_STARTING_NUMBER][i];
+        for (j = 0; j < FONT_BIT_PER_CHAR; j++) {
             if (value & 1) {
-                writeOLED_dataRegister(charColor.upperByte);
-                writeOLED_dataRegister(charColor.lowerByte);
+                writeOLED_dataRegister(charCol.upperByte);
+                writeOLED_dataRegister(charCol.lowerByte);
             } else {
-                writeOLED_dataRegister(0x00);
-                writeOLED_dataRegister(0x00);
+                writeOLED_dataRegister(backCol.upperByte);
+                writeOLED_dataRegister(backCol.lowerByte);
             }
-            value = value >> 1;
+            value >>= 1; // step bitwise through the font (8Bit)
         }
         System_printf("%u ", chars[c - 0x20][i]);
     }
@@ -170,6 +181,8 @@ static void drawChar(char c, uint32_t rgbColor, point origin) {
 }
 static void OLED_power_off(void) {
     // Set STANDBY_ON_OFF
+    createBackgroundFromImage(cool_image);
+    wait_ms(10000);           // wait 10  s
     commandSPI(OLED_DISPLAY_ON_OFF, 0x00);  // Display OFF
     wait_ms(5);           // wait 5 ms
 }
@@ -208,20 +221,7 @@ static color16 createColorPixelFromRGB(uint32_t rgbData) {
     result_color.lowerByte = result & 0xFF;
     return result_color;
 }
-/*! \brief Convert a 8Bit grey value to 16 Bit RGB (5:6:5) Pixel value
- * \param grey uint8_t b/w value of a pixel in 24bit RGB(8:8:8) no Alpha cannel
- * \return color16 converted colorvalue in 16bit RGB space (5:6:5) space, divided into 2 Byte (MSB and LSB)
- */
-static color16 createColorPixelFromBW(uint8_t bw_value) {
-    color16 result_color;
-    uint16_t result;
-    result = bw_value / 5 << 11;
-    result |= bw_value / 6 << 5;
-    result |= bw_value / 5;
-    result_color.upperByte = (result >> 8) & 0xFF;
-    result_color.lowerByte = result & 0xFF;
-    return result_color;
-}
+
 static void writeOLED_indexRegister(uint8_t reg) {
     SETBIT(OLED_RW, 0); // Set the peripheral to write -> mcu write to periph
     // Write to register

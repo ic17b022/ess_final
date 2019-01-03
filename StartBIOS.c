@@ -5,6 +5,7 @@
 // include all common headers
 #include "local_inc/common.h"
 #include "local_inc/oled_display.h"
+#include "local_inc/UART_Task.h"
 
 int main(void)
 {
@@ -18,10 +19,10 @@ int main(void)
 
     // init the SPI with the actual system clock
     initSPI(ui32SysClock);
-    setup_power_on_task("Startup_Oled");
+    setup_OLED_task("Startup_Oled", 5);
     System_printf("Created Startup Oled Task\n");
-
-
+    setup_UART_Task("UART Task", 10);
+    System_printf("Created Startup UART Task\n");
     System_flush();
     /* Start BIOS */
     BIOS_start();

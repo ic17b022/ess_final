@@ -70,6 +70,11 @@ typedef struct point {
 #define OLED_RGB_IF 0xE0
 #define OLED_RGB_POL 0xE1
 #define OLED_DISPLAY_MODE_CONTROL 0xE5
+// Direction of OLED displaying order
+#define OLED_MEMORY_WRITE_READ_HORZ_INC_VERT_INC 0
+#define OLED_MEMORY_WRITE_READ_HORZ_DEC_VERT_INC 1
+#define OLED_MEMORY_WRITE_READ_HORZ_INC_VERT_DEC 2
+#define OLED_MEMORY_WRITE_READ_HORZ_DEC_VERT_DEC 3
 
 #define OLED_DISPLAY_X_MAX 96
 #define OLED_DISPLAY_Y_MAX 96
@@ -124,6 +129,6 @@ typedef struct point {
 
 /* ******* FORWARD DECLARATIONS  ********** */
 extern void initSPI(uint32_t systemFrequency);
-extern void setup_power_on_task(xdc_String name);
+extern void setup_OLED_task(xdc_String name, uint8_t priority);
 
 #endif /* OLED_DISPLAY_H_ */
