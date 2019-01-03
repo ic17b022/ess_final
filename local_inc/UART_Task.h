@@ -36,6 +36,7 @@
 #include <EK_TM4C1294XL.h>
 
 // -------------------------------------- globals ---
+
 Semaphore_Handle sem;
 char charContainer;
 // -------------------------------------- defines ---

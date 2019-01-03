@@ -110,6 +110,11 @@ extern void initSPI(uint32_t systemFrequency) {
     }
     SETBIT(OLED_CS, 1);             // Set Chip select to high, not seleted
 }
+/* \fn setup_OLED_task
+ * \brief create a new OLED Task and initialize it with the necessary parameters.
+ * \param name xdc_String, identifying name of the task
+ * \param priority uitn8_t initial priority of the task (1-15) 15 is highest priority
+ */
 extern void setup_OLED_task(xdc_String name, uint8_t priority) {
     Task_Params taskLedParams;
     Task_Handle taskLed;
@@ -145,7 +150,15 @@ static void OLED_Fxn(void) {
         }
 
 }
-// max 12 chars per line starting point is lower left corner of each char
+/*! \fn drawChar
+ * \brief draw a given char onto the OLEd display
+ * The char get printed one by one, and printed onto the screen. with the current font size 7x13
+ * max 12 chars per line.
+ * \param c char, the character get printed onto the screen (char in ascii value)
+ * \param fontColor uint32_t, the color of the printed char in classic 24Bit RGB (no alpha channel)
+ * \param bgColor uint32_t, background color for the char, because no alpha channel is supported
+ * \param origin point, the lower left corner of the char in the screen cooridnates
+ */
 static void drawChar(char c, uint32_t fontColor, uint32_t bgColor, point origin) {
     // select middle of screen
     // create font rectangle FONT_WIDTH x FONT_HEIGHT (7x13), Text is drawn upside down
@@ -186,6 +199,10 @@ static void OLED_power_off(void) {
     commandSPI(OLED_DISPLAY_ON_OFF, 0x00);  // Display OFF
     wait_ms(5);           // wait 5 ms
 }
+/*! \fn createBackgroundFromColor
+ * \brief create a background with an uniform color for the display-
+ * \param rgbColor uint32_t, background color in classic 24Bit RGB (no alpha channel)
+ */
 static void createBackgroundFromColor(uint32_t rgbColor) {
     color16 color;
     uint16_t i;
@@ -198,6 +215,9 @@ static void createBackgroundFromColor(uint32_t rgbColor) {
         writeOLED_dataRegister(color.lowerByte);
     }
 }
+/*! \brief create a background from an given image.
+ * \param screenimage image, inamge in bitmap format, supplied by a c-array
+ */
 static void createBackgroundFromImage(image screenimage) {
     uint16_t i;
     // enable DDRAM for writing
@@ -207,7 +227,8 @@ static void createBackgroundFromImage(image screenimage) {
         writeOLED_dataRegister(screenimage.pixel_data[i]);
     }
 }
-/*! \brief Convert a 24Bit(8:8:8) RGB value to 16 Bit RGB (5:6:5) Pixel value
+/*! \fn createColorPixelFromRGB
+ * \brief Convert a 24Bit(8:8:8) RGB value to 16 Bit RGB (5:6:5) Pixel value
  * \param rgbData uint32_t color value of a pixel in 24bit RGB(8:8:8) no Alpha cannel
  * \return color16 converted colorvalue in 16bit RGB space (5:6:5) space, divided into 2 Byte (MSB and LSB)
  */
@@ -221,7 +242,10 @@ static color16 createColorPixelFromRGB(uint32_t rgbData) {
     result_color.lowerByte = result & 0xFF;
     return result_color;
 }
-
+/*! \fn writeOLED_indexRegister
+ * \brief write to the OLEDs Controller Index register.
+ * \param reg uint8_t the index of the requested register
+ */
 static void writeOLED_indexRegister(uint8_t reg) {
     SETBIT(OLED_RW, 0); // Set the peripheral to write -> mcu write to periph
     // Write to register
@@ -231,7 +255,10 @@ static void writeOLED_indexRegister(uint8_t reg) {
     while(SSIBusy(OLED_SSI_BASE));
     SETBIT(OLED_CS, 1);
 }
-
+/*! \fn  writeOLED_dataRegister
+ * \brief write to the OLEDs Controller data register.
+ * \param reg uint8_t write the value to the selected register
+ */
 static void writeOLED_dataRegister(uint8_t data) {
     SETBIT(OLED_CS, 0);
     SETBIT(OLED_DC, 1);
@@ -239,13 +266,19 @@ static void writeOLED_dataRegister(uint8_t data) {
     while(SSIBusy(OLED_SSI_BASE));
     SETBIT(OLED_CS, 1);
 }
-// Send command to OLED
+/*! \fn commandSPI
+ * \brief send a complete command to the OLED controller,
+ * \param reg uint8_t select the desired index register from controller
+ * \param value uint8_t this value get written into the selected register
+ */
 static void commandSPI(uint8_t reg, uint8_t value) {
     // Write to register
     writeOLED_indexRegister(reg);
     // Write into the register
     writeOLED_dataRegister(value);
 }
+/*! \fn OLED_power_on
+ * \ brief power on and initialize procedure of the OLED. */
 static void OLED_power_on(void) {
     // wait for 100ms
     wait_ms(100);
