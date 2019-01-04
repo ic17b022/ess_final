@@ -23,5 +23,5 @@ typedef const struct fontContainer {
     unsigned char fontDepth;
     unsigned char fontSpacing;
     unsigned char *font;
-};
+} fontContainer;
 #endif

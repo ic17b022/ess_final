@@ -19,8 +19,10 @@ int main(void)
 
     // init the SPI with the actual system clock
     initSPI(ui32SysClock);
+    // Starting the OLED Task: receiving char and displaying
     setup_OLED_task("Startup_Oled", 5);
     System_printf("Created Startup Oled Task\n");
+    // Starting the UART Task: sending char and displaying
     setup_UART_Task("UART Task", 10);
     System_printf("Created Startup UART Task\n");
     System_flush();

@@ -18,7 +18,7 @@ static point startpointSecondRow;
 static point currentPosition;
 // ------------------------------------ functions ---
 static void OLED_Fxn(void);
-static bool interpretChar (char c, uint32_t bgcolor);
+static bool isPrintableChar (char c, uint32_t bgcolor);
 static calculateCoordinates(void);
 static void updateCurrentPosition(void);
 
@@ -50,6 +50,7 @@ static void OLED_Fxn(void) {
     createBackgroundFromColor(0x00FF00);
     calculateCoordinates();
     bool sem_timeout;
+    enableDownScroll();
 
     while (1) {
         sem_timeout = Semaphore_pend(sem, BIOS_WAIT_FOREVER);
@@ -58,7 +59,7 @@ static void OLED_Fxn(void) {
             System_printf("Semaphore has time out.\n");
             System_flush();
         }
-        if (interpretChar(c, 0x00FF00)) {
+        if (isPrintableChar(c, 0x00FF00)) {
             drawChar(c, 0xFF0000, 0x00FF00, currentPosition);
             currentPosition.x += FONT_SPACING; // Note text is drawing backwards
         }
@@ -80,7 +81,7 @@ static void updateCurrentPosition(void) {
         currentPosition.x = LEFT_MARGIN;
     }
 }
-static bool interpretChar (char c, uint32_t bgcolor) {
+static bool isPrintableChar (char c, uint32_t bgcolor) {
     updateCurrentPosition();
     if (c > 19) {
         return true;

@@ -81,7 +81,6 @@ extern void initSPI(uint32_t systemFrequency) {
     Pinmux();                       // Do all necessary pin muxing
 
     SPI_Params params;
-    SETBIT(LED01,1);
     SPI_Params_init(&params);
     params.transferMode = SPI_MODE_BLOCKING;    // enable blocking mode
     params.transferCallbackFxn = NULL;          // Blocking mode, no Call Back function
@@ -95,14 +94,16 @@ extern void initSPI(uint32_t systemFrequency) {
         System_printf("SPI2 did not open.");
         System_flush();
     } else {
+        SETBIT(LED01, 1);   // Set LED01 on to signal SPI is working!
         System_printf("SPI2 has handle at address: %p.\n", handle);
         System_flush();
     }
     SETBIT(OLED_CS, 1);             // Set Chip select to high, not seleted
+    l
 }
 
 /*! \fn drawChar
- * \brief draw a given char onto the OLEd display
+ * \brief draw a given char onto the OLED display
  * The char get printed one by one, and printed onto the screen. with the current font size 7x13
  * max 12 chars per line.
  * \param c char, the character get printed onto the screen (char in ascii value)
@@ -193,6 +194,23 @@ static color16 createColorPixelFromRGB(uint32_t rgbData) {
     result_color.lowerByte = result & 0xFF;
     return result_color;
 }
+
+void enableDownScroll(void) {
+    // Enable Screen saver
+    commandSPI(0xD0, 1<<7);
+    // Configure screen saver update time -> 0xFF 2sec of Time
+    commandSPI(0xD3, 0xFF);
+    // Screen Saver 'Down Scroll';
+    commandSPI(0xD2, 1<<1);
+    // Set LED04 to signaling Screen saver mode ON
+    SETBIT(LED04, 1);
+}
+void disableDownScroll(void) {
+    // Disable Screen saver
+       commandSPI(0xD0, 0<<7);
+       // Disable LED04 to signaling Screen saver mode OFF
+           SETBIT(LED04, 0);
+}
 /*! \fn writeOLED_indexRegister
  * \brief write to the OLEDs Controller Index register.
  * \param reg uint8_t the index of the requested register
@@ -238,7 +256,6 @@ void OLED_power_on(void) {
     wait_ms(10); // wait 10 ms
     // Set RST to HIGH
     SETBIT(OLED_RST, 1);
-    SETBIT(LED02, 1);
     wait_ms(10); // wait 10 ms
     /* soft Reset */
     commandSPI(OLED_SOFT_RESET, 0x00);

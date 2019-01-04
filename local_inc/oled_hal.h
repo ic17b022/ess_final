@@ -137,4 +137,7 @@ extern void createBackgroundFromImage(image screenimage);
 extern void createBackgroundFromColor(uint32_t rgbColor);
 extern void OLED_power_on(void);
 extern void OLED_power_off(void);
+extern void enableDownScroll(void);
+extern void disableDownScroll(void);
+
 #endif /* OLED_HAL_H_ */
