@@ -45,7 +45,7 @@ void UARTFxn(UArg arg0, UArg arg1)
         char input;
         UART_read(uart, &input, 1);
         // Keystroke in the valid region, send it to the oled_display.c
-        if (input >= 0x20 && input <= 0x7E) {
+        if (input >= 0x08 && input <= 0x7F) {
             charContainer= input;
             Semaphore_post(sem);
         }
