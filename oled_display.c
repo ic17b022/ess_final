@@ -18,7 +18,9 @@ static point startpointSecondRow;
 static point currentPosition;
 // ------------------------------------ functions ---
 static void OLED_Fxn(void);
-static bool interpretChar (char c);
+static bool interpretChar (char c, uint32_t bgcolor);
+static calculateCoordinates(void);
+static void updateCurrentPosition(void);
 
 /* \fn setup_OLED_task
  * \brief create a new OLED Task and initialize it with the necessary parameters.
@@ -56,27 +58,29 @@ static void OLED_Fxn(void) {
             System_printf("Semaphore has time out.\n");
             System_flush();
         }
-        if (interpretChar(c)) {
+        if (interpretChar(c, 0x00FF00)) {
             drawChar(c, 0xFF0000, 0x00FF00, currentPosition);
             currentPosition.x += FONT_SPACING; // Note text is drawing backwards
         }
     }
 }
 static calculateCoordinates(void) {
-    uint8_t margin = (OLED_DISPLAY_Y_MAX - (2* FONT_HEIGHT + FONT_HEIGHT / 4));
-    startpointSecondRow.y = margin;
-    startpointSecondRow.x = LEFT_MARGIN;
-    startpointFirstRow.y = OLED_DISPLAY_Y_MAX - (margin + FONT_HEIGHT);
+    uint8_t margin = (OLED_DISPLAY_Y_MAX - (2* FONT_HEIGHT + FONT_HEIGHT / 4)) / 2;
     startpointFirstRow.x = LEFT_MARGIN;
+    startpointFirstRow.y = margin;
+    startpointSecondRow.x = LEFT_MARGIN;
+    startpointSecondRow.y = OLED_DISPLAY_Y_MAX - (margin + FONT_HEIGHT);
     currentPosition.x = startpointFirstRow.x;
     currentPosition.y = startpointFirstRow.y;
+    System_printf("upper margin: %u lower margin: %u\n",OLED_DISPLAY_Y_MAX - (margin + FONT_HEIGHT), margin);
+    System_flush();
 }
 static void updateCurrentPosition(void) {
     if ((currentPosition.x + FONT_WIDTH) > (OLED_DISPLAY_Y_MAX - RIGHT_MARGIN)) {
         currentPosition.x = LEFT_MARGIN;
     }
 }
-static bool interpretChar (char c) {
+static bool interpretChar (char c, uint32_t bgcolor) {
     updateCurrentPosition();
     if (c > 19) {
         return true;
@@ -91,10 +95,8 @@ static bool interpretChar (char c) {
         break;
         // switch back 1 char and draw space in case 'del'
     case 8:
-    case 127:
-        currentPosition.x -= FONT_WIDTH;
-        c = 0x20;
-        return true;
+        currentPosition.x -= FONT_SPACING; // Spacing is fontwidth + extra space for the next char
+        drawChar(0x20, 0x000000, bgcolor, currentPosition);  // draw space without char feed
         break;
     }
     return false;

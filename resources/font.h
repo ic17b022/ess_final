@@ -17,4 +17,11 @@
 
 extern const unsigned char chars[95][13];
 
+typedef const struct fontContainer {
+    unsigned char fontWidth;
+    unsigned char fontHeight;
+    unsigned char fontDepth;
+    unsigned char fontSpacing;
+    unsigned char *font;
+};
 #endif
