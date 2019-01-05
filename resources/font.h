@@ -22,6 +22,9 @@ typedef const struct fontContainer {
     unsigned char fontHeight;
     unsigned char fontDepth;
     unsigned char fontSpacing;
-    unsigned char *font;
+    unsigned char fontStartingNumber;
+    unsigned char **font;
 } fontContainer;
+
+// extern const fontContainer nimbusMono7x13;
 #endif

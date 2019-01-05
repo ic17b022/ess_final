@@ -3,13 +3,12 @@
  *  \author Valentin Platzgummer - ic17b096
  *  \brief hardware abstraction layer with all necessary drivers for the OLED 96x96
  */
-
+// ----------------------------------------------------------------------------- includes ---
 #include "local_inc/oled_hal.h"
-
+// ----------------------------------------------------------------------------- globals ---
 static volatile uint32_t ui32SysClkFreq;
 static volatile SPI_Handle handle;
 
-/* ******* CONSTANTS  ********** */
 /// \brief Constant Addresses of PINS to drive the OLED Adresses are packed into a struct
 static const PinAddress OLED_RST = {OLED_RST_PORT, OLED_RST_PIN};
 static const PinAddress OLED_DC = {OLED_DC_PORT, OLED_DC_PIN};
@@ -22,12 +21,15 @@ static const PinAddress LED02  = {LED_02_PORT, LED_02_PIN};
 static const PinAddress LED03  = {LED_03_PORT, LED_03_PIN};
 static const PinAddress LED04  = {LED_04_PORT, LED_04_PIN};
 
-// Forward Declarations
+// ----------------------------------------------------------------------------- functions ---
 static void commandSPI(uint8_t reg, uint8_t value);
 static void writeOLED_indexRegister(uint8_t reg);
 static void writeOLED_dataRegister(uint8_t data);
 static void wait_ms(uint32_t delay);
-static color16 createColorPixelFromRGB(uint32_t rgbData);
+static color16 createColorPixelFromRGB(color24 rgbData);
+// ----------------------------------------------------------------------- implementations ---
+const color24 whiteColor = {0xFF,0xFF,0xFF};
+const color24 blackColor = {0x00,0x00,0x00};
 
 static void wait_ms(uint32_t delay) {
     // wait for delay in ms Frequency 120MHz
@@ -99,7 +101,6 @@ extern void initSPI(uint32_t systemFrequency) {
         System_flush();
     }
     SETBIT(OLED_CS, 1);             // Set Chip select to high, not seleted
-    l
 }
 
 /*! \fn drawChar
@@ -111,7 +112,7 @@ extern void initSPI(uint32_t systemFrequency) {
  * \param bgColor uint32_t, background color for the char, because no alpha channel is supported
  * \param origin point, the lower left corner of the char in the screen cooridnates
  */
-void drawChar(char c, uint32_t fontColor, uint32_t bgColor, point origin) {
+void drawChar(char c, color24 fontColor, color24 bgColor, point origin) {
     // select middle of screen
     // create font rectangle FONT_WIDTH x FONT_HEIGHT (7x13), Text is drawn upside down
     // calculate from the right margin
@@ -121,7 +122,7 @@ void drawChar(char c, uint32_t fontColor, uint32_t bgColor, point origin) {
     commandSPI(OLED_MEM_Y2, origin.y + FONT_HEIGHT);
     // write from bottom to top
     commandSPI(OLED_MEMORY_WRITE_READ, OLED_MEMORY_WRITE_READ_HORZ_INC_VERT_DEC);
-    // enable DDRAM for writing
+   // enable DDRAM for writing
     writeOLED_indexRegister(OLED_DDRAM_DATA_ACCESS_PORT);
     uint8_t i,j,value;
     color16 charCol = createColorPixelFromRGB(fontColor);
@@ -129,6 +130,7 @@ void drawChar(char c, uint32_t fontColor, uint32_t bgColor, point origin) {
     System_printf("Drawing char: %c, code: ", c);
     for (i = 0; i < FONT_HEIGHT; i++) {
         value = chars[c - FONT_STARTING_NUMBER][i];
+        //value = nimbusMono7x13.font[c - nimbusMono7x13.fontStartingNumber];
         for (j = 0; j < FONT_BIT_PER_CHAR; j++) {
             if (value & 1) {
                 writeOLED_dataRegister(charCol.upperByte);
@@ -153,9 +155,9 @@ void OLED_power_off(void) {
 }
 /*! \fn createBackgroundFromColor
  * \brief create a background with an uniform color for the display-
- * \param rgbColor uint32_t, background color in classic 24Bit RGB (no alpha channel)
+ * \param rgbColor color24, background color in classic 24Bit RGB (no alpha channel)
  */
-void createBackgroundFromColor(uint32_t rgbColor) {
+void createBackgroundFromColor(color24 rgbColor) {
     color16 color;
     uint16_t i;
     color = createColorPixelFromRGB(rgbColor);
@@ -168,7 +170,7 @@ void createBackgroundFromColor(uint32_t rgbColor) {
     }
 }
 /*! \brief create a background from an given image.
- * \param screenimage image, inamge in bitmap format, supplied by a c-array
+ * \param screenimage image, image in bitmap format, supplied by a c-array
  */
 void createBackgroundFromImage(image screenimage) {
     uint16_t i;
@@ -181,15 +183,15 @@ void createBackgroundFromImage(image screenimage) {
 }
 /*! \fn createColorPixelFromRGB
  * \brief Convert a 24Bit(8:8:8) RGB value to 16 Bit RGB (5:6:5) Pixel value
- * \param rgbData uint32_t color value of a pixel in 24bit RGB(8:8:8) no Alpha cannel
+ * \param rgbData color24 color value of a pixel in 24bit RGB(8:8:8) no Alpha cannel
  * \return color16 converted colorvalue in 16bit RGB space (5:6:5) space, divided into 2 Byte (MSB and LSB)
  */
-static color16 createColorPixelFromRGB(uint32_t rgbData) {
+static color16 createColorPixelFromRGB(color24 rgbData) {
     color16 result_color;
     uint16_t result;
-    result = (rgbData >> 16 & 0xFF) / 5 << 11;
-    result |= (rgbData >> 8 & 0xFF) / 6 << 5;
-    result |= (rgbData & 0xFF) / 5;
+    result = (rgbData.red  & 0xFF) / 5 << 11;
+    result |= (rgbData.green & 0xFF) / 6 << 5;
+    result |= (rgbData.blue & 0xFF) / 5;
     result_color.upperByte = (result >> 8) & 0xFF;
     result_color.lowerByte = result & 0xFF;
     return result_color;
@@ -282,7 +284,7 @@ void OLED_power_on(void) {
     /* Set MCU Interface */
     commandSPI(OLED_CPU_IF,0x00);                 // MPU External interface mode, 8bits
     /* Set Memory Read/Write mode */
-    commandSPI(OLED_MEMORY_WRITE_READ,0x01);      // When MDIR0= 1, Horizontal address counter is decreased. S. Datasheet 24/43
+    commandSPI(OLED_MEMORY_WRITE_READ,0x00);      // When MDIR0= 1, Horizontal address counter is decreased. S. Datasheet 24/43
     /* Set row scan direction */
     commandSPI(OLED_ROW_SCAN_DIRECTION,0x00);     // Column : 0 --> Max, Row : 0 --> Max
     /* Set row scan mode */

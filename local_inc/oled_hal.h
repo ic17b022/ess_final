@@ -7,12 +7,12 @@
 #ifndef OLED_HAL_H_
 #define OLED_HAL_H_
 
-// ------------------------------------ includes ---
+// ----------------------------------------------------------------------------- includes ---
 #include "common.h"
 #include "../resources/image.h"
 #include "../resources/font.h"
 
-// ------------------------------------ typedefs ---
+// ----------------------------------------------------------------------------- typedefs ---
 //! \brief struct PinAddress store the entire Address (Base Port and Pin Number) of a given PIN
 typedef struct PinAddress {
     uint32_t port;  //!< Port Base Address
@@ -24,13 +24,24 @@ typedef struct color16 {
     uint8_t upperByte;  //!< Most significat Byte of a 16Bit Color word
     uint8_t lowerByte;  //!< Least significat Byte of a 16Bit Color word
 } color16;
+//! \brief struct color24 stores the 3 color values RBG
+typedef struct color24 {
+    uint8_t red;    //!< red  0-255
+    uint8_t green;  //!< green 0-255
+    uint8_t blue;   //!< blue 0-255
+} color24;
 //! \ brief struct point stores the coordinates of a given point
 typedef struct point {
     uint8_t x;  //!< uint8_t x-coordinate of the point 0-95
     uint8_t y;  //!< uint8_t y-coordinate of the point 0-95
 } point;
-
-// -------------------------------------- defines ---
+//! \ brief struct rect stores the coordinates of a given rect
+typedef struct rect {
+    point origin;   //!< point coordinate origin lower left point
+    uint8_t width;  //!< width of the rect
+    uint8_t height; //!< height of the rect
+} rect;
+// ----------------------------------------------------------------------------- defines ---
 // switch between ssi2 port and ssi3 port in case of necessary
 #define SSIM_2 1
 #define SSIM_3 0
@@ -131,10 +142,13 @@ typedef struct point {
 /// \brief Set Bit function sets a specific bit on a given position to the given value
 #define SETBIT(PinAddress, bit) (GPIOPinWrite(PinAddress.port, (1 << PinAddress.pin), (bit << PinAddress.pin)))
 
-// ------------------------------------ functions ---
-extern void drawChar(char c, uint32_t fontColor, uint32_t bgColor, point origin);
+// ----------------------------------------------------------------------------- globals---
+extern const color24 whiteColor;
+extern const color24 blackColor;
+// -------------------------------------------------------------------------- functions ---
+extern void drawChar(char c, color24 fontColor, color24 bgColor, point origin);
 extern void createBackgroundFromImage(image screenimage);
-extern void createBackgroundFromColor(uint32_t rgbColor);
+extern void createBackgroundFromColor(color24 rgbColor);
 extern void OLED_power_on(void);
 extern void OLED_power_off(void);
 extern void enableDownScroll(void);

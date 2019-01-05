@@ -7,7 +7,7 @@
 #ifndef UART_TASK_H_
 #define UART_TASK_H_
 
-// ------------------------------------ includes ---
+// ----------------------------------------------------------------------------- includes ---
 #include <stdbool.h>
 #include <stdint.h>
 #include <inc/hw_memmap.h>
@@ -35,15 +35,15 @@
 #include <Board.h>
 #include <EK_TM4C1294XL.h>
 
-// -------------------------------------- globals ---
+// ------------------------------------------------------------------------------ globals ---
 
 Semaphore_Handle sem;
 char charContainer;
-// -------------------------------------- defines ---
+// ------------------------------------------------------------------------------ defines ---
 /// \def UART_BAUD_RATE used baudrate for the UART connection
 #define UART_BAUD_RATE 9600
 
-// ------------------------------------ functions ---
+// ---------------------------------------------------------------------------- functions ---
 /*! \fn UARTFxn
  *  \brief Execute UART Task
  *

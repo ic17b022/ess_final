@@ -1,27 +1,29 @@
 /*! \file oled_display.c
  *  \date Dec 27, 2018
- *  \author Valentin Platzgummer
+ *  \author Valentin Platzgummer - ic17b096
  *  \brief all necessary drivers for the OLED 96x96 and the task to use it in the main thread
  */
 
-// ------------------------------------ includes ---
+// ----------------------------------------------------------------------------- includes ---
 #include "local_inc/oled_display.h"
 #include "local_inc/UART_Task.h"
 #include "local_inc/oled_hal.h"
 
-// -------------------------------------- defines ---
+// ------------------------------------------------------------------------------ defines ---
 #define LEFT_MARGIN 20
 #define RIGHT_MARGIN 20
-// -------------------------------------- globals ---
+// ------------------------------------------------------------------------------ globals ---
 static point startpointFirstRow;
 static point startpointSecondRow;
 static point currentPosition;
-// ------------------------------------ functions ---
+// ---------------------------------------------------------------------------- functions ---
 static void OLED_Fxn(void);
-static bool isPrintableChar (char c, uint32_t bgcolor);
+static bool isPrintableChar (char c, color24 bgcolor);
 static calculateCoordinates(void);
 static void updateCurrentPosition(void);
+static void switchRow(void);
 
+// ----------------------------------------------------------------------- implementation ---
 /* \fn setup_OLED_task
  * \brief create a new OLED Task and initialize it with the necessary parameters.
  * \param name xdc_String, identifying name of the task
@@ -47,7 +49,8 @@ static void OLED_Fxn(void) {
     // power on OLED
     OLED_power_on();
     createBackgroundFromImage(logo_image);
-    createBackgroundFromColor(0x00FF00);
+    color24 bg = {0x00,0xFF,0x00};
+    createBackgroundFromColor(bg);
     calculateCoordinates();
     bool sem_timeout;
     enableDownScroll();
@@ -59,12 +62,18 @@ static void OLED_Fxn(void) {
             System_printf("Semaphore has time out.\n");
             System_flush();
         }
-        if (isPrintableChar(c, 0x00FF00)) {
-            drawChar(c, 0xFF0000, 0x00FF00, currentPosition);
+        color24 fontcolor = {0xFF, 0x00, 0x00};
+        color24 background = {0x00, 0xFF, 0x00};
+        if (isPrintableChar(c, background)) {
+            drawChar(c, fontcolor, background, currentPosition);
             currentPosition.x += FONT_SPACING; // Note text is drawing backwards
         }
     }
 }
+/*! \fn calculateCoordinates
+ *  \brief Calculates the upper and lower margin of the 2 rows centered
+ *  Assuming always 2 text rows being always centered
+ */
 static calculateCoordinates(void) {
     uint8_t margin = (OLED_DISPLAY_Y_MAX - (2* FONT_HEIGHT + FONT_HEIGHT / 4)) / 2;
     startpointFirstRow.x = LEFT_MARGIN;
@@ -76,30 +85,48 @@ static calculateCoordinates(void) {
     System_printf("upper margin: %u lower margin: %u\n",OLED_DISPLAY_Y_MAX - (margin + FONT_HEIGHT), margin);
     System_flush();
 }
+/*! \fn updateCurrentPosition
+ * \brief calculate the line break.
+ * Line break will be done if a next char will not fit into the row.
+ */
 static void updateCurrentPosition(void) {
-    if ((currentPosition.x + FONT_WIDTH) > (OLED_DISPLAY_Y_MAX - RIGHT_MARGIN)) {
-        currentPosition.x = LEFT_MARGIN;
+    if ((currentPosition.x + FONT_WIDTH) > (OLED_DISPLAY_Y_MAX)) {
+        switchRow();
     }
 }
-static bool isPrintableChar (char c, uint32_t bgcolor) {
-    updateCurrentPosition();
+/*! \fn isPrintableChar
+ * \brief function checks chars if they are printable chars to put on screen or control codes
+ * if char is a printable char, the line break will called. Depending on which control code is given,
+ * different actions are taken. in case '\b' the cursor moves on step backwards and a plain background is drawn.
+ * in chase '\n' switches the current row.
+ * \param c char, the given char to examinate
+ * \param bgcolor color24, th given background color for '\b' operation
+ * \return true, if char is printable character, false in other case.
+ */
+static bool isPrintableChar (char c, color24 bgcolor) {
     if (c > 19) {
+        updateCurrentPosition();  // Check position only if real char to draw
         return true;
     }
-    //
+    // switch upon incoming control code. more control codes are possible.
     switch (c) {
-    // insert line break if code is '\n'
-    case 10:
-    case 13:
-        currentPosition.x = LEFT_MARGIN;
-        currentPosition.y = (currentPosition.y == startpointFirstRow.y)? startpointSecondRow.y : startpointFirstRow.y;
-        break;
-        // switch back 1 char and draw space in case 'del'
+    // move cursor back by 1 char + charspacing and draw space in case '\b'
     case 8:
         currentPosition.x -= FONT_SPACING; // Spacing is fontwidth + extra space for the next char
-        drawChar(0x20, 0x000000, bgcolor, currentPosition);  // draw space without char feed
+        drawChar(0x20, bgcolor, bgcolor, currentPosition);  // draw space without char feed
+        break;
+        // insert line break if code is '\n'
+    case 10:
+    case 13:
+        switchRow();
         break;
     }
     return false;
-
+}
+/*! \fn switchRow
+ * \brief switch the current working next row to the following
+ */
+static void switchRow(void) {
+    currentPosition.x = LEFT_MARGIN;
+    currentPosition.y = (currentPosition.y == startpointFirstRow.y)? startpointSecondRow.y : startpointFirstRow.y;
 }
