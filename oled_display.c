@@ -13,9 +13,11 @@
 #define LEFT_MARGIN 20
 #define RIGHT_MARGIN 20
 // ------------------------------------------------------------------------------ globals ---
-static point startpointFirstRow;
-static point startpointSecondRow;
-static point currentPosition;
+static volatile point startpointFirstRow;
+static volatile point startpointSecondRow;
+static volatile point currentPosition;
+static volatile bool isScrolling;
+static fontContainer font;
 // ---------------------------------------------------------------------------- functions ---
 static void OLED_Fxn(void);
 static bool isPrintableChar (char c, color24 bgcolor);
@@ -49,11 +51,12 @@ static void OLED_Fxn(void) {
     // power on OLED
     OLED_power_on();
     createBackgroundFromImage(logo_image);
-    color24 bg = {0x00,0xFF,0x00};
-    createBackgroundFromColor(bg);
+    Task_sleep(5000);
+    createBackgroundFromColor(blueColor);
     calculateCoordinates();
     bool sem_timeout;
-    enableDownScroll();
+
+    initializeFont(&font, 1);
 
     while (1) {
         sem_timeout = Semaphore_pend(sem, BIOS_WAIT_FOREVER);
@@ -62,11 +65,10 @@ static void OLED_Fxn(void) {
             System_printf("Semaphore has time out.\n");
             System_flush();
         }
-        color24 fontcolor = {0xFF, 0x00, 0x00};
-        color24 background = {0x00, 0xFF, 0x00};
-        if (isPrintableChar(c, background)) {
-            drawChar(c, fontcolor, background, currentPosition);
-            currentPosition.x += FONT_SPACING; // Note text is drawing backwards
+
+        if (isPrintableChar(c, blueColor)) {
+            drawChar(c, &font, whiteColor, blueColor, currentPosition);
+            currentPosition.x += font.fontSpacing; // Note text is drawing backwards
         }
     }
 }
@@ -75,14 +77,14 @@ static void OLED_Fxn(void) {
  *  Assuming always 2 text rows being always centered
  */
 static calculateCoordinates(void) {
-    uint8_t margin = (OLED_DISPLAY_Y_MAX - (2* FONT_HEIGHT + FONT_HEIGHT / 4)) / 2;
+    uint8_t margin = (OLED_DISPLAY_Y_MAX - (2* font.fontHeight + font.fontHeight / 4)) / 2;
     startpointFirstRow.x = LEFT_MARGIN;
     startpointFirstRow.y = margin;
     startpointSecondRow.x = LEFT_MARGIN;
-    startpointSecondRow.y = OLED_DISPLAY_Y_MAX - (margin + FONT_HEIGHT);
+    startpointSecondRow.y = OLED_DISPLAY_Y_MAX - (margin + font.fontHeight);
     currentPosition.x = startpointFirstRow.x;
     currentPosition.y = startpointFirstRow.y;
-    System_printf("upper margin: %u lower margin: %u\n",OLED_DISPLAY_Y_MAX - (margin + FONT_HEIGHT), margin);
+    System_printf("upper margin: %u lower margin: %u\n",OLED_DISPLAY_Y_MAX - (margin + font.fontHeight), margin);
     System_flush();
 }
 /*! \fn updateCurrentPosition
@@ -90,7 +92,7 @@ static calculateCoordinates(void) {
  * Line break will be done if a next char will not fit into the row.
  */
 static void updateCurrentPosition(void) {
-    if ((currentPosition.x + FONT_WIDTH) > (OLED_DISPLAY_Y_MAX)) {
+    if ((currentPosition.x + font.fontWidth) > (OLED_DISPLAY_Y_MAX)) {
         switchRow();
     }
 }
@@ -98,9 +100,9 @@ static void updateCurrentPosition(void) {
  * \brief function checks chars if they are printable chars to put on screen or control codes
  * if char is a printable char, the line break will called. Depending on which control code is given,
  * different actions are taken. in case '\b' the cursor moves on step backwards and a plain background is drawn.
- * in chase '\n' switches the current row.
- * \param c char, the given char to examinate
- * \param bgcolor color24, th given background color for '\b' operation
+ * in chase '\n' switches the current row. in case '\t' down scrolling is switched between enable/disable
+ * \param c char, the given char to examined
+ * \param bgcolor color24, the given background color for '\b' operation
  * \return true, if char is printable character, false in other case.
  */
 static bool isPrintableChar (char c, color24 bgcolor) {
@@ -110,12 +112,17 @@ static bool isPrintableChar (char c, color24 bgcolor) {
     }
     // switch upon incoming control code. more control codes are possible.
     switch (c) {
-    // move cursor back by 1 char + charspacing and draw space in case '\b'
+    // move cursor back by 1 char + char spacing and draw space in case '\b'
     case 8:
-        currentPosition.x -= FONT_SPACING; // Spacing is fontwidth + extra space for the next char
-        drawChar(0x20, bgcolor, bgcolor, currentPosition);  // draw space without char feed
+        currentPosition.x -= font.fontSpacing; // Spacing is font width + extra space for the next char
+        drawChar(0x20, &font, bgcolor, bgcolor, currentPosition);  // draw space without char feed
         break;
-        // insert line break if code is '\n'
+     // enable/ disable screen saver scrolling by pressing '\t'
+    case 9:
+        isScrolling ^= 1;
+        toggleDownScroll(isScrolling);
+        break;
+     // insert line break if code is '\n'
     case 10:
     case 13:
         switchRow();

@@ -145,13 +145,15 @@ typedef struct rect {
 // ----------------------------------------------------------------------------- globals---
 extern const color24 whiteColor;
 extern const color24 blackColor;
+extern const color24 redColor;
+extern const color24 greenColor;
+extern const color24 blueColor;
 // -------------------------------------------------------------------------- functions ---
-extern void drawChar(char c, color24 fontColor, color24 bgColor, point origin);
+void drawChar(char c, fontContainer *font, color24 fontColor, color24 bgColor, point origin);
 extern void createBackgroundFromImage(image screenimage);
 extern void createBackgroundFromColor(color24 rgbColor);
 extern void OLED_power_on(void);
 extern void OLED_power_off(void);
-extern void enableDownScroll(void);
-extern void disableDownScroll(void);
+extern void toggleDownScroll(bool enable);
 
 #endif /* OLED_HAL_H_ */

@@ -28,14 +28,18 @@ static void writeOLED_dataRegister(uint8_t data);
 static void wait_ms(uint32_t delay);
 static color16 createColorPixelFromRGB(color24 rgbData);
 // ----------------------------------------------------------------------- implementations ---
+
+//! \brief predefined colors
 const color24 whiteColor = {0xFF,0xFF,0xFF};
 const color24 blackColor = {0x00,0x00,0x00};
+const color24 redColor = {0xFF,0x00,0x00};
+const color24 greenColor = {0x00,0xFF,0x00};
+const color24 blueColor = {0x00,0x00,0xFF};
 
 static void wait_ms(uint32_t delay) {
     // wait for delay in ms Frequency 120MHz
     SysCtlDelay(ui32SysClkFreq / 3000 * delay);
 }
-
 // Confgure the GPIO Pins for the onboard LEDs
 void Pinmux (void) {
     SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOF);    // LED 03 + LED04
@@ -100,48 +104,57 @@ extern void initSPI(uint32_t systemFrequency) {
         System_printf("SPI2 has handle at address: %p.\n", handle);
         System_flush();
     }
-    SETBIT(OLED_CS, 1);             // Set Chip select to high, not seleted
+    SETBIT(OLED_CS, 1);             // Set Chip select to high, not selected
 }
 
 /*! \fn drawChar
  * \brief draw a given char onto the OLED display
- * The char get printed one by one, and printed onto the screen. with the current font size 7x13
- * max 12 chars per line.
+ * The char get printed one by one, and printed onto the screen. Font size may be choose between 3 different sizes.
  * \param c char, the character get printed onto the screen (char in ascii value)
+ * \param fontSize uint8_t, the fonts size in 3 different sizes, 1 small, 2 middle, 3 large
  * \param fontColor uint32_t, the color of the printed char in classic 24Bit RGB (no alpha channel)
  * \param bgColor uint32_t, background color for the char, because no alpha channel is supported
- * \param origin point, the lower left corner of the char in the screen cooridnates
+ * \param origin point, the lower left corner of the char in the screen coordinates
  */
-void drawChar(char c, color24 fontColor, color24 bgColor, point origin) {
+void drawChar(char c, fontContainer *font, color24 fontColor, color24 bgColor, point origin) {
     // select middle of screen
     // create font rectangle FONT_WIDTH x FONT_HEIGHT (7x13), Text is drawn upside down
     // calculate from the right margin
+    // set the drawing window for each char, according to the given font size
     commandSPI(OLED_MEM_X1, OLED_DISPLAY_X_MAX - origin.x);
-    commandSPI(OLED_MEM_X2, OLED_DISPLAY_X_MAX -origin.x + FONT_WIDTH);
+    commandSPI(OLED_MEM_X2, OLED_DISPLAY_X_MAX -origin.x + font->fontWidth);
     commandSPI(OLED_MEM_Y1, origin.y);
-    commandSPI(OLED_MEM_Y2, origin.y + FONT_HEIGHT);
+    commandSPI(OLED_MEM_Y2, origin.y + font->fontHeight);
     // write from bottom to top
-    commandSPI(OLED_MEMORY_WRITE_READ, OLED_MEMORY_WRITE_READ_HORZ_INC_VERT_DEC);
-   // enable DDRAM for writing
+    commandSPI(OLED_MEMORY_WRITE_READ, OLED_MEMORY_WRITE_READ_HORZ_INC_VERT_INC);
+    // enable DDRAM for writing
     writeOLED_indexRegister(OLED_DDRAM_DATA_ACCESS_PORT);
-    uint8_t i,j,value;
+    uint8_t i,j,k,value;
+
     color16 charCol = createColorPixelFromRGB(fontColor);
     color16 backCol = createColorPixelFromRGB(bgColor);
     System_printf("Drawing char: %c, code: ", c);
-    for (i = 0; i < FONT_HEIGHT; i++) {
-        value = chars[c - FONT_STARTING_NUMBER][i];
-        //value = nimbusMono7x13.font[c - nimbusMono7x13.fontStartingNumber];
-        for (j = 0; j < FONT_BIT_PER_CHAR; j++) {
-            if (value & 1) {
-                writeOLED_dataRegister(charCol.upperByte);
-                writeOLED_dataRegister(charCol.lowerByte);
-            } else {
-                writeOLED_dataRegister(backCol.upperByte);
-                writeOLED_dataRegister(backCol.lowerByte);
+    System_printf("\n");
+    // outer loop defines the height od each char
+    for (i = 0; i < font->fontHeight * font->fontDepthByte; i+= font->fontDepthByte) {
+        // each char may wider than 8 bit
+        for (k = 0; k < font->fontDepthByte; k++) {
+            value = font->font[c * font->charArrayLength + i + k];
+            // step through each bit of the value to find if set or unset.
+            for (j = 0; j < 8; j++) {
+                if (value & 1) {
+                    writeOLED_dataRegister(charCol.upperByte);
+                    writeOLED_dataRegister(charCol.lowerByte);
+                    System_printf("x");
+                } else {
+                    writeOLED_dataRegister(backCol.upperByte);
+                    writeOLED_dataRegister(backCol.lowerByte);
+                    System_printf("_");
+                }
+                value >>= 1; // step bitwise through the font (8Bit)
             }
-            value >>= 1; // step bitwise through the font (8Bit)
         }
-        System_printf("%u ", chars[c - 0x20][i]);
+        System_printf("\n");
     }
     System_printf("\n");
     System_flush();
@@ -197,22 +210,17 @@ static color16 createColorPixelFromRGB(color24 rgbData) {
     return result_color;
 }
 
-void enableDownScroll(void) {
-    // Enable Screen saver
-    commandSPI(0xD0, 1<<7);
+void toggleDownScroll(bool enable) {
+    // Enable/ disable Screen saver
+    commandSPI(0xD0, enable<<7);
     // Configure screen saver update time -> 0xFF 2sec of Time
     commandSPI(0xD3, 0xFF);
     // Screen Saver 'Down Scroll';
-    commandSPI(0xD2, 1<<1);
+    commandSPI(0xD2, enable<<1);
     // Set LED04 to signaling Screen saver mode ON
-    SETBIT(LED04, 1);
+    SETBIT(LED04, enable);
 }
-void disableDownScroll(void) {
-    // Disable Screen saver
-       commandSPI(0xD0, 0<<7);
-       // Disable LED04 to signaling Screen saver mode OFF
-           SETBIT(LED04, 0);
-}
+
 /*! \fn writeOLED_indexRegister
  * \brief write to the OLEDs Controller Index register.
  * \param reg uint8_t the index of the requested register
@@ -284,7 +292,7 @@ void OLED_power_on(void) {
     /* Set MCU Interface */
     commandSPI(OLED_CPU_IF,0x00);                 // MPU External interface mode, 8bits
     /* Set Memory Read/Write mode */
-    commandSPI(OLED_MEMORY_WRITE_READ,0x00);      // When MDIR0= 1, Horizontal address counter is decreased. S. Datasheet 24/43
+    commandSPI(OLED_MEMORY_WRITE_READ,OLED_MEMORY_WRITE_READ_HORZ_DEC_VERT_INC);      // When MDIR0= 1, Horizontal address counter is decreased. S. Datasheet 24/43
     /* Set row scan direction */
     commandSPI(OLED_ROW_SCAN_DIRECTION,0x00);     // Column : 0 --> Max, Row : 0 --> Max
     /* Set row scan mode */
