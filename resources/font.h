@@ -8,17 +8,18 @@
 // Nimbus-Mono-Regular 8Bit deeps
 #ifndef FONT_H_
 #define FONT_H_
-#include <stdint.h>
+#include "common.h"
 
 //! brief fontContainer struct contains all data for the used font
 typedef struct fontContainer {
-    uint8_t charArrayLength;    //!< length of the array of each character
+    uint8_t charArrayLength;    //!< array length array for each individual character
     uint8_t fontWidth;          //!< width of each individual characters
     uint8_t fontHeight;         //!< height of each individual characters
-    uint8_t fontDepthByte;      //!< Bitdepth of the charachters in Bits 8, 16 or 24
-    uint8_t fontSpacing;        //!< Characterlength plus spacing between two characters
+    uint8_t fontDepthByte;      //!< Bit depth of the characters in Bits 8, 16 or 24
+    uint8_t fontSpacing;        //!< Character length plus spacing between two characters
+    uint8_t fontHeading;        //!< Headroom + fontheight for the given font, total height
     unsigned char *font;
 } fontContainer;
 
-extern void initializeFont(fontContainer *fc, int size);
+extern void initializeFont(fontContainer *fc, uint8_t size);
 #endif

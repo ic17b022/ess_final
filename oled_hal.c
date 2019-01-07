@@ -133,8 +133,6 @@ void drawChar(char c, fontContainer *font, color24 fontColor, color24 bgColor, p
 
     color16 charCol = createColorPixelFromRGB(fontColor);
     color16 backCol = createColorPixelFromRGB(bgColor);
-    System_printf("Drawing char: %c, code: ", c);
-    System_printf("\n");
     // outer loop defines the height od each char
     for (i = 0; i < font->fontHeight * font->fontDepthByte; i+= font->fontDepthByte) {
         // each char may wider than 8 bit
@@ -145,19 +143,14 @@ void drawChar(char c, fontContainer *font, color24 fontColor, color24 bgColor, p
                 if (value & 1) {
                     writeOLED_dataRegister(charCol.upperByte);
                     writeOLED_dataRegister(charCol.lowerByte);
-                    System_printf("x");
                 } else {
                     writeOLED_dataRegister(backCol.upperByte);
                     writeOLED_dataRegister(backCol.lowerByte);
-                    System_printf("_");
                 }
                 value >>= 1; // step bitwise through the font (8Bit)
             }
         }
-        System_printf("\n");
     }
-    System_printf("\n");
-    System_flush();
 }
 void OLED_power_off(void) {
     // Set STANDBY_ON_OFF

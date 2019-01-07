@@ -12,16 +12,16 @@
 // ------------------------------------------------------------------------------ defines ---
 #define LEFT_MARGIN 20
 #define RIGHT_MARGIN 20
+#define UPPER_MARGIN 20
+#define LOWER_MARGIN 20
 // ------------------------------------------------------------------------------ globals ---
-static volatile point startpointFirstRow;
-static volatile point startpointSecondRow;
 static volatile point currentPosition;
 static volatile bool isScrolling;
 static fontContainer font;
 // ---------------------------------------------------------------------------- functions ---
 static void OLED_Fxn(void);
 static bool isPrintableChar (char c, color24 bgcolor);
-static calculateCoordinates(void);
+static initializeCurrentPoint(void);
 static void updateCurrentPosition(void);
 static void switchRow(void);
 
@@ -53,10 +53,10 @@ static void OLED_Fxn(void) {
     createBackgroundFromImage(logo_image);
     Task_sleep(5000);
     createBackgroundFromColor(blueColor);
-    calculateCoordinates();
+    initializeCurrentPoint();
     bool sem_timeout;
 
-    initializeFont(&font, 1);
+    initializeFont(&font, 3);
 
     while (1) {
         sem_timeout = Semaphore_pend(sem, BIOS_WAIT_FOREVER);
@@ -76,23 +76,16 @@ static void OLED_Fxn(void) {
  *  \brief Calculates the upper and lower margin of the 2 rows centered
  *  Assuming always 2 text rows being always centered
  */
-static calculateCoordinates(void) {
-    uint8_t margin = (OLED_DISPLAY_Y_MAX - (2* font.fontHeight + font.fontHeight / 4)) / 2;
-    startpointFirstRow.x = LEFT_MARGIN;
-    startpointFirstRow.y = margin;
-    startpointSecondRow.x = LEFT_MARGIN;
-    startpointSecondRow.y = OLED_DISPLAY_Y_MAX - (margin + font.fontHeight);
-    currentPosition.x = startpointFirstRow.x;
-    currentPosition.y = startpointFirstRow.y;
-    System_printf("upper margin: %u lower margin: %u\n",OLED_DISPLAY_Y_MAX - (margin + font.fontHeight), margin);
-    System_flush();
+static initializeCurrentPoint(void) {
+    currentPosition.x = LEFT_MARGIN;
+    currentPosition.y = UPPER_MARGIN;
 }
 /*! \fn updateCurrentPosition
  * \brief calculate the line break.
  * Line break will be done if a next char will not fit into the row.
  */
 static void updateCurrentPosition(void) {
-    if ((currentPosition.x + font.fontWidth) > (OLED_DISPLAY_Y_MAX)) {
+    if ((currentPosition.x + font.fontWidth) > (OLED_DISPLAY_X_MAX)) {
         switchRow();
     }
 }
@@ -135,5 +128,9 @@ static bool isPrintableChar (char c, color24 bgcolor) {
  */
 static void switchRow(void) {
     currentPosition.x = LEFT_MARGIN;
-    currentPosition.y = (currentPosition.y == startpointFirstRow.y)? startpointSecondRow.y : startpointFirstRow.y;
+    if (currentPosition.y + font.fontHeading > OLED_DISPLAY_Y_MAX) {
+        currentPosition.y = UPPER_MARGIN;
+    } else {
+        currentPosition.y += font.fontHeading;
+    }
 }
