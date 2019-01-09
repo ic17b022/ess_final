@@ -103,6 +103,26 @@
 							</tool>
 						</toolChain>
 					</folderInfo>
+					<fileInfo id="com.ti.ccstudio.buildDefinitions.TMS470.Debug.2028883607.551728129" name="UART_Task.c" rcbsApplicability="disable" resourcePath="UART_Task.c" toolsToInvoke="com.ti.ccstudio.buildDefinitions.TMS470_18.1.exe.compilerDebug.311307735.1989951944">
+						<tool id="com.ti.ccstudio.buildDefinitions.TMS470_18.1.exe.compilerDebug.311307735.1989951944" name="ARM Compiler" superClass="com.ti.ccstudio.buildDefinitions.TMS470_18.1.exe.compilerDebug.311307735">
+							<option id="com.ti.ccstudio.buildDefinitions.TMS470_18.1.compilerID.INCLUDE_PATH.1740661997" superClass="com.ti.ccstudio.buildDefinitions.TMS470_18.1.compilerID.INCLUDE_PATH" valueType="includePath">
+								<listOptionValue builtIn="false" value="${COM_TI_RTSC_TIRTOSTIVAC_INSTALL_DIR}/products/TivaWare_C_Series-2.1.1.71b"/>
+								<listOptionValue builtIn="false" value="${COM_TI_RTSC_TIRTOSTIVAC_INSTALL_DIR}/products/bios_6_45_02_31/packages/ti/sysbios/posix"/>
+								<listOptionValue builtIn="false" value="${CG_TOOL_ROOT}/include"/>
+								<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/local_inc}&quot;"/>
+							</option>
+							<inputType id="com.ti.ccstudio.buildDefinitions.TMS470_18.1.compiler.inputType__C_SRCS.1441944327" name="C Sources" superClass="com.ti.ccstudio.buildDefinitions.TMS470_18.1.compiler.inputType__C_SRCS"/>
+							<inputType id="com.ti.ccstudio.buildDefinitions.TMS470_18.1.compiler.inputType__CPP_SRCS.813104870" name="C++ Sources" superClass="com.ti.ccstudio.buildDefinitions.TMS470_18.1.compiler.inputType__CPP_SRCS"/>
+							<inputType id="com.ti.ccstudio.buildDefinitions.TMS470_18.1.compiler.inputType__ASM_SRCS.837232407" name="Assembly Sources" superClass="com.ti.ccstudio.buildDefinitions.TMS470_18.1.compiler.inputType__ASM_SRCS"/>
+							<inputType id="com.ti.ccstudio.buildDefinitions.TMS470_18.1.compiler.inputType__ASM2_SRCS.1906475450" name="Assembly Sources" superClass="com.ti.ccstudio.buildDefinitions.TMS470_18.1.compiler.inputType__ASM2_SRCS"/>
+						</tool>
+						<tool customBuildStep="true" id="org.eclipse.cdt.managedbuilder.ui.rcbs.1411472932" name="Resource Custom Build Step">
+							<inputType id="org.eclipse.cdt.managedbuilder.ui.rcbs.inputtype.994376020" name="Resource Custom Build Step Input Type">
+								<additionalInput kind="additionalinputdependency" paths=""/>
+							</inputType>
+							<outputType id="org.eclipse.cdt.managedbuilder.ui.rcbs.outputtype.1859409293" name="Resource Custom Build Step Output Type"/>
+						</tool>
+					</fileInfo>
 					<sourceEntries>
 						<entry excluding="local_inc/src|src" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
 					</sourceEntries>

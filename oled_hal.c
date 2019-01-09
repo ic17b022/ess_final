@@ -5,20 +5,30 @@
  */
 // ----------------------------------------------------------------------------- includes ---
 #include "local_inc/oled_hal.h"
+
+//! \addtogroup group_oled_hal
+//! @{
+
 // ----------------------------------------------------------------------------- globals ---
 static volatile uint32_t ui32SysClkFreq;
 static volatile SPI_Handle handle;
 
-/// \brief Constant Addresses of PINS to drive the OLED Adresses are packed into a struct
+//! \brief Constant Address of PIN OLED Reset
 static const PinAddress OLED_RST = {OLED_RST_PORT, OLED_RST_PIN};
+//! \brief Constant Address of PIN OLED SPI Command/ value select
 static const PinAddress OLED_DC = {OLED_DC_PORT, OLED_DC_PIN};
+//! \brief Constant Address of PIN OLED SPI Chip select
 static const PinAddress OLED_CS = {OLED_CS_PORT, OLED_CS_PIN};
+//! \brief Constant Address of PIN OLED Read/ Write select
 static const PinAddress OLED_RW = {OLED_RW_PORT, OLED_RW_PIN};
 
-/// \brief Constant Addresses of the boards LED- PINS, Adresses are packed into a struct
+//! \brief Constant Addresses of the boards LED01
 static const PinAddress LED01  = {LED_01_PORT, LED_01_PIN};
+//! \brief Constant Addresses of the boards LED02
 static const PinAddress LED02  = {LED_02_PORT, LED_02_PIN};
+//! \brief Constant Addresses of the boards LED03
 static const PinAddress LED03  = {LED_03_PORT, LED_03_PIN};
+//! \brief Constant Addresses of the boards LED04
 static const PinAddress LED04  = {LED_04_PORT, LED_04_PIN};
 
 // ----------------------------------------------------------------------------- functions ---
@@ -29,19 +39,33 @@ static void wait_ms(uint32_t delay);
 static color16 createColorPixelFromRGB(color24 rgbData);
 // ----------------------------------------------------------------------- implementations ---
 
-//! \brief predefined colors
+//! \brief predefined color white
 const color24 whiteColor = {0xFF,0xFF,0xFF};
+//! \brief predefined color black
 const color24 blackColor = {0x00,0x00,0x00};
+//! \brief predefined color red
 const color24 redColor = {0xFF,0x00,0x00};
+//! \brief predefined color green
 const color24 greenColor = {0x00,0xFF,0x00};
+//! \brief predefined color blue
 const color24 blueColor = {0x00,0x00,0xFF};
-
+/*!
+ * \brief dela the system for a given time
+ * \param delay uint32_t delay time in milliseconds 10^-3 sec
+ */
 static void wait_ms(uint32_t delay) {
     // wait for delay in ms Frequency 120MHz
     SysCtlDelay(ui32SysClkFreq / 3000 * delay);
 }
-// Confgure the GPIO Pins for the onboard LEDs
-void Pinmux (void) {
+/*!
+ * \brief Confgure the GPIO Pins for the used peripherals
+ * Pins are set correctly for following peripherals
+ *  - SPI
+ *      - Boosterpack input for SPI is configurable via preprocessor define SSIM_2 or SSIM_3 as needed
+ * - LEDs:
+ *      - all 4 onboard LEDS
+ */
+static void Pinmux (void) {
     SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOF);    // LED 03 + LED04
     SysCtlPeripheralEnable(SYSCTL_PERIPH_GPION);    // LED 01 + LED02
 
@@ -81,7 +105,12 @@ void Pinmux (void) {
     SSIAdvModeSet(OLED_SSI_BASE, SSI_ADV_MODE_LEGACY);      // Operation in
     SSIEnable(OLED_SSI_BASE);
 }
-
+/*!
+ *
+ * \brief enable the SPI connection from the board
+ * \param systemFrequency the system frequency set at program start
+ * needed to set the bitrate frequency accordingly to the system cycle
+ */
 extern void initSPI(uint32_t systemFrequency) {
     ui32SysClkFreq = systemFrequency;
     Pinmux();                       // Do all necessary pin muxing
@@ -106,15 +135,14 @@ extern void initSPI(uint32_t systemFrequency) {
     }
     SETBIT(OLED_CS, 1);             // Set Chip select to high, not selected
 }
-
-/*! \fn drawChar
+/*!
  * \brief draw a given char onto the OLED display
  * The char get printed one by one, and printed onto the screen. Font size may be choose between 3 different sizes.
- * \param c char, the character get printed onto the screen (char in ascii value)
- * \param fontSize uint8_t, the fonts size in 3 different sizes, 1 small, 2 middle, 3 large
- * \param fontColor uint32_t, the color of the printed char in classic 24Bit RGB (no alpha channel)
- * \param bgColor uint32_t, background color for the char, because no alpha channel is supported
- * \param origin point, the lower left corner of the char in the screen coordinates
+ * \param c the character get printed onto the screen (char in ascii value)
+ * \param font the selected font with all associated data
+ * \param fontColor the color of the printed char in classic 24Bit RGB (no alpha channel)
+ * \param bgColor background color for the char, because no alpha channel is supported
+ * \param origin the lower left corner of the char in the screen coordinates
  */
 void drawChar(char c, fontContainer *font, color24 fontColor, color24 bgColor, point origin) {
     // select middle of screen
@@ -133,8 +161,6 @@ void drawChar(char c, fontContainer *font, color24 fontColor, color24 bgColor, p
 
     color16 charCol = createColorPixelFromRGB(fontColor);
     color16 backCol = createColorPixelFromRGB(bgColor);
-    System_printf("Drawing char: %c, code: ", c);
-    System_printf("\n");
     // outer loop defines the height od each char
     for (i = 0; i < font->fontHeight * font->fontDepthByte; i+= font->fontDepthByte) {
         // each char may wider than 8 bit
@@ -145,20 +171,18 @@ void drawChar(char c, fontContainer *font, color24 fontColor, color24 bgColor, p
                 if (value & 1) {
                     writeOLED_dataRegister(charCol.upperByte);
                     writeOLED_dataRegister(charCol.lowerByte);
-                    System_printf("x");
                 } else {
                     writeOLED_dataRegister(backCol.upperByte);
                     writeOLED_dataRegister(backCol.lowerByte);
-                    System_printf("_");
                 }
                 value >>= 1; // step bitwise through the font (8Bit)
             }
         }
-        System_printf("\n");
     }
-    System_printf("\n");
-    System_flush();
 }
+/*
+ * \brief shuts the OLED Display down
+ */
 void OLED_power_off(void) {
     // Set STANDBY_ON_OFF
     createBackgroundFromImage(cool_image);
@@ -166,7 +190,7 @@ void OLED_power_off(void) {
     commandSPI(OLED_DISPLAY_ON_OFF, 0x00);  // Display OFF
     wait_ms(5);           // wait 5 ms
 }
-/*! \fn createBackgroundFromColor
+/*!
  * \brief create a background with an uniform color for the display-
  * \param rgbColor color24, background color in classic 24Bit RGB (no alpha channel)
  */
@@ -182,8 +206,9 @@ void createBackgroundFromColor(color24 rgbColor) {
         writeOLED_dataRegister(color.lowerByte);
     }
 }
-/*! \brief create a background from an given image.
- * \param screenimage image, image in bitmap format, supplied by a c-array
+/*!
+ * \brief create a background from an given image.
+ * \param screenimage image in bitmap format, supplied by a c-array
  */
 void createBackgroundFromImage(image screenimage) {
     uint16_t i;
@@ -194,10 +219,10 @@ void createBackgroundFromImage(image screenimage) {
         writeOLED_dataRegister(screenimage.pixel_data[i]);
     }
 }
-/*! \fn createColorPixelFromRGB
+/*!
  * \brief Convert a 24Bit(8:8:8) RGB value to 16 Bit RGB (5:6:5) Pixel value
- * \param rgbData color24 color value of a pixel in 24bit RGB(8:8:8) no Alpha cannel
- * \return color16 converted colorvalue in 16bit RGB space (5:6:5) space, divided into 2 Byte (MSB and LSB)
+ * \param rgbData color value of a pixel in 24bit RGB(8:8:8) no Alpha cannel
+ * \return converted colorvalue in 16bit RGB space (5:6:5) space, divided into 2 Byte (MSB and LSB)
  */
 static color16 createColorPixelFromRGB(color24 rgbData) {
     color16 result_color;
@@ -209,7 +234,10 @@ static color16 createColorPixelFromRGB(color24 rgbData) {
     result_color.lowerByte = result & 0xFF;
     return result_color;
 }
-
+/*!
+ * \brief enables or disables the screensaver scroll down functionality (build in)
+ * \param enable 1 for enabling function, 0 for disabling
+ */
 void toggleDownScroll(bool enable) {
     // Enable/ disable Screen saver
     commandSPI(0xD0, enable<<7);
@@ -221,9 +249,9 @@ void toggleDownScroll(bool enable) {
     SETBIT(LED04, enable);
 }
 
-/*! \fn writeOLED_indexRegister
+/*!
  * \brief write to the OLEDs Controller Index register.
- * \param reg uint8_t the index of the requested register
+ * \param reg index of the requested register
  */
 static void writeOLED_indexRegister(uint8_t reg) {
     SETBIT(OLED_RW, 0); // Set the peripheral to write -> mcu write to periph
@@ -234,9 +262,9 @@ static void writeOLED_indexRegister(uint8_t reg) {
     while(SSIBusy(OLED_SSI_BASE));
     SETBIT(OLED_CS, 1);
 }
-/*! \fn  writeOLED_dataRegister
+/*!
  * \brief write to the OLEDs Controller data register.
- * \param reg uint8_t write the value to the selected register
+ * \param reg value for the selected register
  */
 static void writeOLED_dataRegister(uint8_t data) {
     SETBIT(OLED_CS, 0);
@@ -245,10 +273,10 @@ static void writeOLED_dataRegister(uint8_t data) {
     while(SSIBusy(OLED_SSI_BASE));
     SETBIT(OLED_CS, 1);
 }
-/*! \fn commandSPI
+/*!
  * \brief send a complete command to the OLED controller,
- * \param reg uint8_t select the desired index register from controller
- * \param value uint8_t this value get written into the selected register
+ * \param reg select the desired index register from controller
+ * \param value value get written into the selected register
  */
 static void commandSPI(uint8_t reg, uint8_t value) {
     // Write to register
@@ -256,8 +284,10 @@ static void commandSPI(uint8_t reg, uint8_t value) {
     // Write into the register
     writeOLED_dataRegister(value);
 }
-/*! \fn OLED_power_on
- * \ brief power on and initialize procedure of the OLED. */
+/*!
+ * \brief power on and initialize procedure of the OLED.
+ * all necessary initial parameters are written to the corresponding register
+ */
 void OLED_power_on(void) {
     // wait for 100ms
     wait_ms(100);
@@ -327,3 +357,9 @@ void OLED_power_on(void) {
     System_printf("OLED powered on.\n");
     System_flush();
 }
+//*****************************************************************************
+//
+// Close the Doxygen group.
+//! @}
+//
+//*****************************************************************************

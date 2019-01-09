@@ -1,6 +1,10 @@
 /* GIMP RGBA C-Source image dump (logo.c) */
 #include "image.h"
-
+//! \addtogroup group_oled_res
+//! @{
+/*! brief logo in bitmap format with all necessary data
+ * \param logo_image struct defined in image.h
+ */
 const image logo_image = {
   96, 96, 2,
   "Logo for Embedded",
@@ -624,7 +628,9 @@ const image logo_image = {
   "\020I\020I\020I\020I\020I\020I\020i\020i\020I\020I\020I\020I\020I\020I\020i\020i\020I\020I"
   "\020I\020I\020I\020I\020I\020I\020I\020I\020I\020I\020I\020",
 };
-
+/* \brief goodby image
+ * \param image, struct defined in image.h (Snoopy as Mr. Cool)
+ */
 const image cool_image = {
   96, 96, 2,
   "Goodby Screen",
@@ -1217,4 +1223,5 @@ const image cool_image = {
   "\005)\005)\005)\005*\005*\005*\005*\005\012\015\011\025\011\035\011\025\011\025\011\025\011\015*\005*\005*"
   "\005*\005*\005*\005*\005*\005*\005*\005*\005*\005*\005*\005*\005\352\004",
 };
-
+// Close the Doxygen group.
+//! @}

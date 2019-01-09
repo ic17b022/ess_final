@@ -9,24 +9,35 @@
 #include "local_inc/UART_Task.h"
 #include "local_inc/oled_hal.h"
 
+//! \addtogroup group_oled_app
+//! @{
 // ------------------------------------------------------------------------------ defines ---
+//! \brief left margin of text window
 #define LEFT_MARGIN 20
+//! \brief right margin of text window
 #define RIGHT_MARGIN 20
+//! \brief top margin of text window
+#define UPPER_MARGIN 20
+//! \brief bottom margin of text window
+#define LOWER_MARGIN 20
 // ------------------------------------------------------------------------------ globals ---
-static volatile point startpointFirstRow;
-static volatile point startpointSecondRow;
+//! \brief contains the actual position of the cursor in window
 static volatile point currentPosition;
+//! \brief wheter sreensaver scrolling is enabled or disabled
 static volatile bool isScrolling;
+//! \brief used fontsize for next char (1-3)
+static volatile uint8_t fontsize;
+//! \brief used font needed for calculation purposes
 static fontContainer font;
 // ---------------------------------------------------------------------------- functions ---
 static void OLED_Fxn(void);
 static bool isPrintableChar (char c, color24 bgcolor);
-static calculateCoordinates(void);
+static initializeCurrentPoint(void);
 static void updateCurrentPosition(void);
 static void switchRow(void);
 
 // ----------------------------------------------------------------------- implementation ---
-/* \fn setup_OLED_task
+/*!
  * \brief create a new OLED Task and initialize it with the necessary parameters.
  * \param name xdc_String, identifying name of the task
  * \param priority uitn8_t initial priority of the task (1-15) 15 is highest priority
@@ -47,16 +58,21 @@ extern void setup_OLED_task(xdc_String name, uint8_t priority) {
         System_abort("TaskLed create failed");
     }
 }
+/*!
+ * \brief OLED function enables the OLED Display, creates a given background
+ * In the working while loop displays all incoming char to the display
+ */
 static void OLED_Fxn(void) {
     // power on OLED
     OLED_power_on();
-    createBackgroundFromImage(logo_image);
-    Task_sleep(5000);
+    createBackgroundFromImage(cool_image);
+    Task_sleep(10000);
+    fontsize = 3;
     createBackgroundFromColor(blueColor);
-    calculateCoordinates();
+    initializeCurrentPoint();
     bool sem_timeout;
 
-    initializeFont(&font, 1);
+    initializeFont(&font, fontsize);
 
     while (1) {
         sem_timeout = Semaphore_pend(sem, BIOS_WAIT_FOREVER);
@@ -72,31 +88,24 @@ static void OLED_Fxn(void) {
         }
     }
 }
-/*! \fn calculateCoordinates
- *  \brief Calculates the upper and lower margin of the 2 rows centered
- *  Assuming always 2 text rows being always centered
+/*!
+ *  \brief set the initial starting point to the upper left corner
+ *  \todo find out where is the starting point of the chars lower right, (lower left?)
  */
-static calculateCoordinates(void) {
-    uint8_t margin = (OLED_DISPLAY_Y_MAX - (2* font.fontHeight + font.fontHeight / 4)) / 2;
-    startpointFirstRow.x = LEFT_MARGIN;
-    startpointFirstRow.y = margin;
-    startpointSecondRow.x = LEFT_MARGIN;
-    startpointSecondRow.y = OLED_DISPLAY_Y_MAX - (margin + font.fontHeight);
-    currentPosition.x = startpointFirstRow.x;
-    currentPosition.y = startpointFirstRow.y;
-    System_printf("upper margin: %u lower margin: %u\n",OLED_DISPLAY_Y_MAX - (margin + font.fontHeight), margin);
-    System_flush();
+static initializeCurrentPoint(void) {
+    currentPosition.x = LEFT_MARGIN;
+    currentPosition.y = UPPER_MARGIN;
 }
-/*! \fn updateCurrentPosition
+/*!
  * \brief calculate the line break.
  * Line break will be done if a next char will not fit into the row.
  */
 static void updateCurrentPosition(void) {
-    if ((currentPosition.x + font.fontWidth) > (OLED_DISPLAY_Y_MAX)) {
+    if ((currentPosition.x + font.fontWidth) > (OLED_DISPLAY_X_MAX)) {
         switchRow();
     }
 }
-/*! \fn isPrintableChar
+/*!
  * \brief function checks chars if they are printable chars to put on screen or control codes
  * if char is a printable char, the line break will called. Depending on which control code is given,
  * different actions are taken. in case '\b' the cursor moves on step backwards and a plain background is drawn.
@@ -130,10 +139,16 @@ static bool isPrintableChar (char c, color24 bgcolor) {
     }
     return false;
 }
-/*! \fn switchRow
+/*!
  * \brief switch the current working next row to the following
  */
 static void switchRow(void) {
     currentPosition.x = LEFT_MARGIN;
-    currentPosition.y = (currentPosition.y == startpointFirstRow.y)? startpointSecondRow.y : startpointFirstRow.y;
+    if (currentPosition.y + font.fontHeading > OLED_DISPLAY_Y_MAX) {
+        currentPosition.y = UPPER_MARGIN;
+    } else {
+        currentPosition.y += font.fontHeading;
+    }
 }
+// Close Doxygen group
+//! @}
