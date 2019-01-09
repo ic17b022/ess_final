@@ -1,6 +1,9 @@
 /* GIMP RGBA C-Source image dump (logo.c) */
 #include "image.h"
 
+/*! brief logo in bitmap format with all necessary data
+ * \param logo_image struct defined in image.h
+ */
 const image logo_image = {
   96, 96, 2,
   "Logo for Embedded",
@@ -624,7 +627,9 @@ const image logo_image = {
   "\020I\020I\020I\020I\020I\020I\020i\020i\020I\020I\020I\020I\020I\020I\020i\020i\020I\020I"
   "\020I\020I\020I\020I\020I\020I\020I\020I\020I\020I\020I\020",
 };
-
+/* \brief goodby image
+ * \param cool_image image, struct defined in image.h
+ */
 const image cool_image = {
   96, 96, 2,
   "Goodby Screen",

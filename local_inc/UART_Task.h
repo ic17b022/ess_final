@@ -1,7 +1,8 @@
 /*!
  * \file UART_Task.h
- * \author: Valentin Platzgummer ic17b096
- * \date: Jan, 02 2019
+ * \brief UART Task detects keystroke and sends the detected chars to the OLED Task for displaying
+ * \author Valentin Platzgummer ic17b096
+ * \date Jan, 02 2019
  */
 
 #ifndef UART_TASK_H_

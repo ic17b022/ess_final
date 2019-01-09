@@ -1,7 +1,8 @@
 /*!
  * \file UART_Task.c
- * \author: Valentin Platzgummer ic17b096
- * \date: Jan, 02 2019
+ * \brief UART Task detects keystroke and sends the detected chars to the OLED Task for displaying
+ * \author Valentin Platzgummer ic17b096
+ * \date Jan, 02 2019
  */
 #include "local_inc/UART_Task.h"
 
@@ -35,7 +36,7 @@ void UARTFxn(UArg arg0, UArg arg1)
     Semaphore_Params params;
     Semaphore_Params_init(&params);
 
-    //create Mailbox with max 6 chars
+    // create a Semaphore for each individual char
     sem = Semaphore_create(0, &params, &er);
     if (sem == NULL) {
         System_abort("Error creating the Semaphore");
@@ -47,7 +48,7 @@ void UARTFxn(UArg arg0, UArg arg1)
         // Keystroke in the valid region, send it to the oled_display.c
         if (input >= 0x08 && input <= 0x7F) {
             charContainer= input;
-            Semaphore_post(sem);
+            Semaphore_post(sem);  // Semaphore get posted on each enterd char
         }
         UART_write(uart, &input, 1); // Remove this line to stop echoing!
     }

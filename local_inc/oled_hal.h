@@ -149,6 +149,16 @@ extern const color24 redColor;
 extern const color24 greenColor;
 extern const color24 blueColor;
 // -------------------------------------------------------------------------- functions ---
+
+/*! \fn drawChar
+ * \brief draw a given char onto the OLED display
+ * The char get printed one by one, and printed onto the screen. Font size may be choose between 3 different sizes.
+ * \param c char, the character get printed onto the screen (char in ascii value)
+ * \param fontSize uint8_t, the fonts size in 3 different sizes, 1 small, 2 middle, 3 large
+ * \param fontColor uint32_t, the color of the printed char in classic 24Bit RGB (no alpha channel)
+ * \param bgColor uint32_t, background color for the char, because no alpha channel is supported
+ * \param origin point, the lower left corner of the char in the screen coordinates
+ */
 void drawChar(char c, fontContainer *font, color24 fontColor, color24 bgColor, point origin);
 extern void createBackgroundFromImage(image screenimage);
 extern void createBackgroundFromColor(color24 rgbColor);

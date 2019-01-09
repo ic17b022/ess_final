@@ -17,6 +17,7 @@
 // ------------------------------------------------------------------------------ globals ---
 static volatile point currentPosition;
 static volatile bool isScrolling;
+static volatile uint8_t fontsize;
 static fontContainer font;
 // ---------------------------------------------------------------------------- functions ---
 static void OLED_Fxn(void);
@@ -51,12 +52,13 @@ static void OLED_Fxn(void) {
     // power on OLED
     OLED_power_on();
     createBackgroundFromImage(logo_image);
-    Task_sleep(5000);
+    Task_sleep(3000);
+    fontsize = 1;
     createBackgroundFromColor(blueColor);
     initializeCurrentPoint();
     bool sem_timeout;
 
-    initializeFont(&font, 3);
+    initializeFont(&font, fontsize);
 
     while (1) {
         sem_timeout = Semaphore_pend(sem, BIOS_WAIT_FOREVER);
@@ -72,9 +74,9 @@ static void OLED_Fxn(void) {
         }
     }
 }
-/*! \fn calculateCoordinates
- *  \brief Calculates the upper and lower margin of the 2 rows centered
- *  Assuming always 2 text rows being always centered
+/*! \fn initializeCurrentPoint
+ *  \brief setsthe initial starting point to the upper left corner
+ *  \todo find out where is the starting point of the chars lower right, (lower left?)
  */
 static initializeCurrentPoint(void) {
     currentPosition.x = LEFT_MARGIN;

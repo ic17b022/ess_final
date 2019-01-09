@@ -29,19 +29,32 @@ static void wait_ms(uint32_t delay);
 static color16 createColorPixelFromRGB(color24 rgbData);
 // ----------------------------------------------------------------------- implementations ---
 
-//! \brief predefined colors
+//! \brief predefined color white
 const color24 whiteColor = {0xFF,0xFF,0xFF};
+//! \brief predefined color black
 const color24 blackColor = {0x00,0x00,0x00};
+//! \brief predefined color red
 const color24 redColor = {0xFF,0x00,0x00};
+//! \brief predefined color green
 const color24 greenColor = {0x00,0xFF,0x00};
+//! \brief predefined color blue
 const color24 blueColor = {0x00,0x00,0xFF};
-
+/*! \fn wait_ms
+ * \brief dela the system for a given time
+ * \param delay uint32_t delay time in milliseconds 10^-3 sec
+ */
 static void wait_ms(uint32_t delay) {
     // wait for delay in ms Frequency 120MHz
     SysCtlDelay(ui32SysClkFreq / 3000 * delay);
 }
-// Confgure the GPIO Pins for the onboard LEDs
-void Pinmux (void) {
+/*! \fn Pinmux
+ * \brief Confgure the GPIO Pins for the used peripherals
+ * Pins are set correctly for following peripherals
+ * <li>SPI</li>
+ * Boosterpack input for SPI is configurable via preprocessor define SSIM_2 or SSIM_3 as needed
+ * <li>all 4 onboard LEDS</li>
+ */
+static void Pinmux (void) {
     SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOF);    // LED 03 + LED04
     SysCtlPeripheralEnable(SYSCTL_PERIPH_GPION);    // LED 01 + LED02
 
@@ -81,7 +94,12 @@ void Pinmux (void) {
     SSIAdvModeSet(OLED_SSI_BASE, SSI_ADV_MODE_LEGACY);      // Operation in
     SSIEnable(OLED_SSI_BASE);
 }
-
+/*!
+ * \fn initSPI
+ * \brief enable the SPI connection from the board
+ * \param systemFrequency uint32_t the system frequency set at program start
+ * needed to set the bitrate frequency accordingly to the system cycle
+ */
 extern void initSPI(uint32_t systemFrequency) {
     ui32SysClkFreq = systemFrequency;
     Pinmux();                       // Do all necessary pin muxing
@@ -106,14 +124,13 @@ extern void initSPI(uint32_t systemFrequency) {
     }
     SETBIT(OLED_CS, 1);             // Set Chip select to high, not selected
 }
-
 /*! \fn drawChar
  * \brief draw a given char onto the OLED display
  * The char get printed one by one, and printed onto the screen. Font size may be choose between 3 different sizes.
  * \param c char, the character get printed onto the screen (char in ascii value)
- * \param fontSize uint8_t, the fonts size in 3 different sizes, 1 small, 2 middle, 3 large
- * \param fontColor uint32_t, the color of the printed char in classic 24Bit RGB (no alpha channel)
- * \param bgColor uint32_t, background color for the char, because no alpha channel is supported
+ * \param font, fontContainer the selected font with all associated data
+ * \param fontColor color24, the color of the printed char in classic 24Bit RGB (no alpha channel)
+ * \param bgColor color24, background color for the char, because no alpha channel is supported
  * \param origin point, the lower left corner of the char in the screen coordinates
  */
 void drawChar(char c, fontContainer *font, color24 fontColor, color24 bgColor, point origin) {
@@ -250,7 +267,9 @@ static void commandSPI(uint8_t reg, uint8_t value) {
     writeOLED_dataRegister(value);
 }
 /*! \fn OLED_power_on
- * \ brief power on and initialize procedure of the OLED. */
+ * \brief power on and initialize procedure of the OLED.
+ * all necessary initial parameters are written to the corresponding register
+ */
 void OLED_power_on(void) {
     // wait for 100ms
     wait_ms(100);
