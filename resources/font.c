@@ -9,7 +9,6 @@
 #include "font_array.h"
 
 /*!
- * \fn initializeFont
  * \brief initializes the fontContainer struct with all needed data for any given font
  * \param fc fontContainer, pointer to a fontContainer struct to be initialized
  * \param size unsigned char, size f the font, 1-3 in bit depth steps 8bit, 16bit and 24 bit.

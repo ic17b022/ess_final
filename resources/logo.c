@@ -628,7 +628,7 @@ const image logo_image = {
   "\020I\020I\020I\020I\020I\020I\020I\020I\020I\020I\020I\020",
 };
 /* \brief goodby image
- * \param cool_image image, struct defined in image.h
+ * \param image, struct defined in image.h (Snoopy as Mr. Cool)
  */
 const image cool_image = {
   96, 96, 2,

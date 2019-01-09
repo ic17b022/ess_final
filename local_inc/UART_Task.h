@@ -45,17 +45,15 @@ char charContainer;
 #define UART_BAUD_RATE 9600
 
 // ---------------------------------------------------------------------------- functions ---
-/*! \fn UARTFxn
+/*!
  *  \brief Execute UART Task
- *
- *
- *   \param arg0 void
- *   \param arg1 void
+ *  \param arg0 void
+ *  \param arg1 void
  *
 */
 void UARTFxn(UArg arg0, UArg arg1);
 
-/*! \fn setup_UART_Task
+/*!
  *  \brief Setup UART task
  *
  *  Setup UART task

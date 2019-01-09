@@ -18,7 +18,7 @@ typedef struct fontContainer {
     uint8_t fontDepthByte;      //!< Bit depth of the characters in Bits 8, 16 or 24
     uint8_t fontSpacing;        //!< Character length plus spacing between two characters
     uint8_t fontHeading;        //!< Headroom + fontheight for the given font, total height
-    unsigned char *font;
+    unsigned char *font;        //!< Pointer to font array, font is given in 1dim char array, coded bitmap
 } fontContainer;
 
 extern void initializeFont(fontContainer *fc, uint8_t size);

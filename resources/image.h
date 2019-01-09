@@ -12,7 +12,7 @@ typedef const struct image {
     unsigned char       height;     ///< height in pixels of image
     unsigned char       bytes_per_pixel; ///< Bytes per pixels 2:RGB16, 3:RGB, 4:RGBA */
     char          *comment;         ///< name of image
-    unsigned char *pixel_data;      ///< image data ascii format octal
+    unsigned char *pixel_data;      ///< image data ascii format octal, coded bitmap
 } image;
 #endif /* RESOURCES_IMAGE_H_ */
 
