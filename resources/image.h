@@ -3,13 +3,15 @@
  *  \date Jan 1, 2019
  *  \author Valentin Platzgummer
 */
-//! \addtogroup OLED Graphical Resources
-//! @{
 
+/*!
+ * \addtogroup group_oled_ress
+ *! @{
+*/
 #ifndef RESOURCES_IMAGE_H_
 #define RESOURCES_IMAGE_H_
 
-/// \brief image struct for use with oled 96x96
+//! \brief image struct for use with oled 96x96
 typedef const struct image {
     unsigned char       width;      ///< width in pixels of image
     unsigned char       height;     ///< height in pixels of image
@@ -19,9 +21,9 @@ typedef const struct image {
 } image;
 #endif /* RESOURCES_IMAGE_H_ */
 
-/// \brief Image of Joe Cool, very cool! (Could be the shut down image?)
+//! \brief Image of Joe Cool, very cool! (Could be the shut down image?)
 extern const image cool_image;
-/// \brief Starting logo, just refine it
+//!s \brief Starting logo, just refine it
 extern const image logo_image ;
 
 // Close the Doxygen group.

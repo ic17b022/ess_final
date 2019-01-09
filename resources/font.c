@@ -7,7 +7,7 @@
 
 #include "font.h"
 #include "font_array.h"
-//! \addtogroup OLED Graphical Resources
+//! \addtogroup group_oled_res
 //! @{
 /*!
  * \brief initializes the fontContainer struct with all needed data for any given font

@@ -1,6 +1,6 @@
 /* GIMP RGBA C-Source image dump (logo.c) */
 #include "image.h"
-//! \addtogroup OLED Graphical Resources
+//! \addtogroup group_oled_res
 //! @{
 /*! brief logo in bitmap format with all necessary data
  * \param logo_image struct defined in image.h

@@ -1,7 +1,11 @@
+/*! \file font.array.h
+ *  \date Jan, 05 2019.
+ *  \author Valentin Platzgummer ic17b096d
+ *  \brief delaratation of the 3 used Fonts
+ */
 //
-// Created by marcaurel on 05.01.19.
-//
-//! \addtogroup OLED Graphical Resources
+
+//! \addtogroup group_oled_res
 //! @{
 #ifndef DRAWTEXT_FONT_ARRAY_H
 #define DRAWTEXT_FONT_ARRAY_H
