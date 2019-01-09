@@ -20,19 +20,18 @@
 //! @{
 
 // ---------------------------------------------------------------------------- functions ---
-extern void Broker_task(void);
+static void initializeSemaphore(void);
 
 // ----------------------------------------------------------------------- implementation ---
 /*!
  * \brief create a new Broker Task and initialize it with the necessary parameters.
  * \param name xdc_String, identifying name of the task
- * \param priority uitn8_t initial priority of the task (1-15) 15 is highest priority
+ * \param priority uint8_t initial priority of the task (1-15) 15 is highest priority
  */
 extern void setup_Broker_task(xdc_String name, uint8_t priority) {
     Task_Params taskLedParams;
     Task_Handle taskLed;
     Error_Block eb;
-    /* Create OLED startup task with priority 15*/
     Error_init(&eb);
     Task_Params_init(&taskLedParams);
     taskLedParams.instance->name = name;
@@ -51,22 +50,38 @@ extern void setup_Broker_task(xdc_String name, uint8_t priority) {
  * to display.
  */
 extern void Broker_task(void) {
+    initializeSemaphore();
+
+    while (1) {
+        // receive char from UART task
+        Semaphore_pend(uart_sem, BIOS_WAIT_FOREVER);
+        System_printf("Char from UART: %c", uartChar);
+        // Convert input ...
+
+        oledChar = uartChar;
+        // post the semaphore for the OLED Task
+        Semaphore_post(output_sem);
+    }
+}
+static void initializeSemaphore(void) {
     Error_Block er;
     Semaphore_Params output_sem_parms;
     Semaphore_Params_init(&output_sem_parms);
 
-    Semaphore_create(0, &output_sem_parms, &er);
-
-    while (1) {
-        // receive char from UART task
-        // Semaphore_pend(sem, BIOS_WAIT_FOREVER);
-        //System_printf("Char from UART: %c", uartChar);
-        // Convert input ...
-
-
-        // post the semaphore for the OLED Task
-        Semaphore_post(output_sem);
+    output_sem = Semaphore_create(0, &output_sem_parms, &er);
+    if (output_sem == NULL) {
+        System_printf("Failed creating output Semaphore\n");
+        System_flush();
     }
+    Semaphore_Params uart_sem_parms;
+    Semaphore_Params_init(&uart_sem_parms);
+
+    uart_sem =  Semaphore_create(0, &uart_sem_parms, &er);
+    if (uart_sem == NULL) {
+        System_printf("Failed creating output Semaphore\n");
+        System_flush();
+    }
+
 }
 
 //! @}

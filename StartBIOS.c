@@ -7,6 +7,7 @@
 #include "local_inc/oled_display.h"
 #include "local_inc/UART_Task.h"
 #include "local_inc/heartrate.h"
+#include "local_inc/broker.h"
 
 int main(void)
 {
@@ -23,6 +24,10 @@ int main(void)
 
     // init the SPI with the actual system clock
     initSPI(ui32SysClock);
+    // Starting the Broker Task: receiving char and displaying
+    setup_Broker_task("Broker Task", 5);
+    System_printf("Created Startup Broker Task\n");
+
     // Starting the OLED Task: receiving char and displaying
     setup_OLED_task("Startup_Oled", 5);
     System_printf("Created Startup Oled Task\n");

@@ -8,6 +8,8 @@
 #include "local_inc/oled_display.h"
 #include "local_inc/UART_Task.h"
 #include "local_inc/oled_hal.h"
+#include "local_inc/broker.h"
+
 
 //! \addtogroup group_oled_app
 //! @{
@@ -75,8 +77,10 @@ static void OLED_Fxn(void) {
     initializeFont(&font, fontsize);
 
     while (1) {
-        sem_timeout = Semaphore_pend(sem, BIOS_WAIT_FOREVER);
-        char c = charContainer;
+       // sem_timeout = Semaphore_pend(sem, BIOS_WAIT_FOREVER);
+//        char c = charContainer;
+         sem_timeout = Semaphore_pend(output_sem, BIOS_WAIT_FOREVER);
+        char c = oledChar;
         if (!sem_timeout) {
             System_printf("Semaphore has time out.\n");
             System_flush();

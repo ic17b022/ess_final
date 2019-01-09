@@ -6,6 +6,7 @@
  */
 #include "local_inc/common.h"
 #include "local_inc/UART_Task.h"
+#include "local_inc/broker.h"
 //! \addtogroup group_comm
 //! @{
 
@@ -50,8 +51,10 @@ void UARTFxn(UArg arg0, UArg arg1)
         UART_read(uart, &input, 1);
         // Keystroke in the valid region, send it to the oled_display.c
         if (input >= 0x08 && input <= 0x7F) {
-            charContainer= input;
-            Semaphore_post(sem);  // Semaphore get posted on each entered char
+           // charContainer= input;
+           // Semaphore_post(sem);  // Semaphore get posted on each entered char
+            uartChar = input;
+            Semaphore_post(uart_sem); // Semaphore get posted to broker
         }
         UART_write(uart, &input, 1); // Remove this line to stop echoing!
     }
