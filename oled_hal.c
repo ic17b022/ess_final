@@ -5,6 +5,10 @@
  */
 // ----------------------------------------------------------------------------- includes ---
 #include "local_inc/oled_hal.h"
+
+//! \addtogroup OLED Hardware Abstraction Layer
+//! @{
+
 // ----------------------------------------------------------------------------- globals ---
 static volatile uint32_t ui32SysClkFreq;
 static volatile SPI_Handle handle;
@@ -56,9 +60,9 @@ static void wait_ms(uint32_t delay) {
 /*!
  * \brief Confgure the GPIO Pins for the used peripherals
  * Pins are set correctly for following peripherals
- * <li>SPI</li>
- * Boosterpack input for SPI is configurable via preprocessor define SSIM_2 or SSIM_3 as needed
- * <li>all 4 onboard LEDS</li>
+ *  - SPI
+ *      Boosterpack input for SPI is configurable via preprocessor define SSIM_2 or SSIM_3 as needed
+ * - LEDs: all 4 onboard LEDS
  */
 static void Pinmux (void) {
     SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOF);    // LED 03 + LED04
@@ -230,7 +234,7 @@ static color16 createColorPixelFromRGB(color24 rgbData) {
     return result_color;
 }
 /*!
- * \enables/ disables the screensaver scroll down functionality (build in)
+ * \brief enables or disables the screensaver scroll down functionality (build in)
  * \param enable 1 for enabling function, 0 for disabling
  */
 void toggleDownScroll(bool enable) {
@@ -352,3 +356,9 @@ void OLED_power_on(void) {
     System_printf("OLED powered on.\n");
     System_flush();
 }
+//*****************************************************************************
+//
+// Close the Doxygen group.
+//! @}
+//
+//*****************************************************************************

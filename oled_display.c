@@ -10,9 +10,13 @@
 #include "local_inc/oled_hal.h"
 
 // ------------------------------------------------------------------------------ defines ---
+//! \brief left margin of text window
 #define LEFT_MARGIN 20
+//! \brief right margin of text window
 #define RIGHT_MARGIN 20
+//! \brief top margin of text window
 #define UPPER_MARGIN 20
+//! \brief bottom margin of text window
 #define LOWER_MARGIN 20
 // ------------------------------------------------------------------------------ globals ---
 static volatile point currentPosition;
@@ -50,13 +54,13 @@ extern void setup_OLED_task(xdc_String name, uint8_t priority) {
 }
 /*!
  * \brief OLED function enables the OLED Display, creates a given background
- * In a working qhile loop displays all incoming char to the display
+ * In the working while loop displays all incoming char to the display
  */
 static void OLED_Fxn(void) {
     // power on OLED
     OLED_power_on();
-    createBackgroundFromImage(logo_image);
-    Task_sleep(3000);
+    createBackgroundFromImage(cool_image);
+    Task_sleep(10000);
     fontsize = 1;
     createBackgroundFromColor(blueColor);
     initializeCurrentPoint();

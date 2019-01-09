@@ -48,7 +48,7 @@ char charContainer;
 /*!
  *  \brief Execute UART Task
  *  \param arg0 void
- *  \param arg1 void
+ *  s\param arg1 void
  *
 */
 void UARTFxn(UArg arg0, UArg arg1);

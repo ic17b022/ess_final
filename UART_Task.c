@@ -6,7 +6,7 @@
  */
 #include "local_inc/UART_Task.h"
 
-/*! \fn UARTFxn
+/*!
  * \brief UART Task receives keystrokes from an attached Terminal via UART
  * The keystroke get tested, and if the comply with the valid chars the char get appended to
  * the global char buffer. And a semaphore get posted
@@ -53,7 +53,7 @@ void UARTFxn(UArg arg0, UArg arg1)
         UART_write(uart, &input, 1); // Remove this line to stop echoing!
     }
 }
-/*! \fn setup_UART_Task
+/*!
  * \brief create a new UART Task and initialize it with the necessary parameters.
  * \param name xdc_String, identifying name of the task
  * \param priority uitn8_t initial priority of the task (1-15) 15 is highest priority

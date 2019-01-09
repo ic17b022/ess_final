@@ -1,6 +1,7 @@
 /* GIMP RGBA C-Source image dump (logo.c) */
 #include "image.h"
-
+//! \addtogroup OLED Graphical Resources
+//! @{
 /*! brief logo in bitmap format with all necessary data
  * \param logo_image struct defined in image.h
  */
@@ -1222,4 +1223,5 @@ const image cool_image = {
   "\005)\005)\005)\005*\005*\005*\005*\005\012\015\011\025\011\035\011\025\011\025\011\025\011\015*\005*\005*"
   "\005*\005*\005*\005*\005*\005*\005*\005*\005*\005*\005*\005*\005\352\004",
 };
-
+// Close the Doxygen group.
+//! @}

@@ -9,6 +9,8 @@
 #ifndef FONT_H_
 #define FONT_H_
 #include "common.h"
+//! \addtogroup OLED Graphical Resources
+//! @{
 
 //! brief fontContainer struct contains all data for the used font
 typedef struct fontContainer {
@@ -23,3 +25,5 @@ typedef struct fontContainer {
 
 extern void initializeFont(fontContainer *fc, uint8_t size);
 #endif
+// Close the Doxygen group.
+//! @}

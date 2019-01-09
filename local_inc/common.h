@@ -1,9 +1,8 @@
-/*
- * common.h
- *
- *  Created on: Dec 27, 2018
- *      Author: marcaurel
- */
+/*! \file commn.h
+ *  \brief including all shared headers files osed by this project, mainly RTOS and driverlib headers
+ *  \date Jan 1, 2019
+ *  \author Valentin Platzgummer
+*/
 
 #ifndef COMMON_H_
 #define COMMON_H_

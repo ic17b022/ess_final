@@ -7,7 +7,8 @@
 
 #include "font.h"
 #include "font_array.h"
-
+//! \addtogroup OLED Graphical Resources
+//! @{
 /*!
  * \brief initializes the fontContainer struct with all needed data for any given font
  * \param fc fontContainer, pointer to a fontContainer struct to be initialized
@@ -49,3 +50,5 @@ void initializeFont(fontContainer *fc, uint8_t size) {
             System_abort("Illegal font size");
     }
 }
+// Close the Doxygen group.
+//! @}
