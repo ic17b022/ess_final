@@ -6,7 +6,7 @@
 // ----------------------------------------------------------------------------- includes ---
 #include "local_inc/oled_hal.h"
 
-//! \addtogroup OLED Hardware Abstraction Layer
+//! \addtogroup group_oled_hal
 //! @{
 
 // ----------------------------------------------------------------------------- globals ---
@@ -61,8 +61,9 @@ static void wait_ms(uint32_t delay) {
  * \brief Confgure the GPIO Pins for the used peripherals
  * Pins are set correctly for following peripherals
  *  - SPI
- *      Boosterpack input for SPI is configurable via preprocessor define SSIM_2 or SSIM_3 as needed
- * - LEDs: all 4 onboard LEDS
+ *      - Boosterpack input for SPI is configurable via preprocessor define SSIM_2 or SSIM_3 as needed
+ * - LEDs:
+ *      - all 4 onboard LEDS
  */
 static void Pinmux (void) {
     SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOF);    // LED 03 + LED04

@@ -9,6 +9,8 @@
 #include "local_inc/UART_Task.h"
 #include "local_inc/oled_hal.h"
 
+//! \addtogroup group_oled_app
+//! @{
 // ------------------------------------------------------------------------------ defines ---
 //! \brief left margin of text window
 #define LEFT_MARGIN 20
@@ -19,9 +21,13 @@
 //! \brief bottom margin of text window
 #define LOWER_MARGIN 20
 // ------------------------------------------------------------------------------ globals ---
+//! \brief contains the actual position of the cursor in window
 static volatile point currentPosition;
+//! \brief wheter sreensaver scrolling is enabled or disabled
 static volatile bool isScrolling;
+//! \brief used fontsize for next char (1-3)
 static volatile uint8_t fontsize;
+//! \brief used font needed for calculation purposes
 static fontContainer font;
 // ---------------------------------------------------------------------------- functions ---
 static void OLED_Fxn(void);
@@ -144,3 +150,5 @@ static void switchRow(void) {
         currentPosition.y += font.fontHeading;
     }
 }
+// Close Doxygen group
+//! @}

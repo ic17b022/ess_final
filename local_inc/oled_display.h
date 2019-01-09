@@ -6,7 +6,8 @@
 
 #ifndef OLED_DISPLAY_H_
 #define OLED_DISPLAY_H_
-
+//! \addtogroup group_oled_app
+//! @{
 // ------------------------------------ includes ---
 #include "common.h"
 
@@ -15,3 +16,6 @@ extern void initSPI(uint32_t systemFrequency);
 extern void setup_OLED_task(xdc_String name, uint8_t priority);
 
 #endif /* OLED_DISPLAY_H_ */
+
+// End Doxygen group
+// @}

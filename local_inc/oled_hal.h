@@ -12,7 +12,7 @@
 #include "../resources/image.h"
 #include "../resources/font.h"
 
-//! \addtogroup OLED Hardware Abstraction Layer
+//! \addtogroup group_oled_hal
 //! @{
 
 // ----------------------------------------------------------------------------- typedefs ---
@@ -24,8 +24,8 @@ typedef struct PinAddress {
 
 //! \brief struct color16 stores the upper and lower significant Bytes form a 16Bit color word
 typedef struct color16 {
-    uint8_t upperByte;  //!< Most significat Byte of a 16Bit Color word
-    uint8_t lowerByte;  //!< Least significat Byte of a 16Bit Color word
+    uint8_t upperByte;  //!< Most significant Byte of a 16Bit Color word
+    uint8_t lowerByte;  //!< Least significant Byte of a 16Bit Color word
 } color16;
 //! \brief struct color24 stores the 3 color values RBG
 typedef struct color24 {
