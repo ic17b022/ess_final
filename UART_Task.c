@@ -4,7 +4,10 @@
  * \author Valentin Platzgummer ic17b096
  * \date Jan, 02 2019
  */
+#include "local_inc/common.h"
 #include "local_inc/UART_Task.h"
+//! \addtogroup group_comm
+//! @{
 
 /*!
  * \brief UART Task receives keystrokes from an attached Terminal via UART
@@ -48,7 +51,7 @@ void UARTFxn(UArg arg0, UArg arg1)
         // Keystroke in the valid region, send it to the oled_display.c
         if (input >= 0x08 && input <= 0x7F) {
             charContainer= input;
-            Semaphore_post(sem);  // Semaphore get posted on each enterd char
+            Semaphore_post(sem);  // Semaphore get posted on each entered char
         }
         UART_write(uart, &input, 1); // Remove this line to stop echoing!
     }
@@ -86,3 +89,5 @@ void setup_UART_Task(xdc_String name, uint8_t priority)
         System_abort("TaskUART create failed");
     }
 }
+// End Doxygen group
+//! @}
