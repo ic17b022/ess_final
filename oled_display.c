@@ -27,7 +27,7 @@ static void updateCurrentPosition(void);
 static void switchRow(void);
 
 // ----------------------------------------------------------------------- implementation ---
-/* \fn setup_OLED_task
+/*!
  * \brief create a new OLED Task and initialize it with the necessary parameters.
  * \param name xdc_String, identifying name of the task
  * \param priority uitn8_t initial priority of the task (1-15) 15 is highest priority
@@ -48,6 +48,10 @@ extern void setup_OLED_task(xdc_String name, uint8_t priority) {
         System_abort("TaskLed create failed");
     }
 }
+/*!
+ * \brief OLED function enables the OLED Display, creates a given background
+ * In a working qhile loop displays all incoming char to the display
+ */
 static void OLED_Fxn(void) {
     // power on OLED
     OLED_power_on();
@@ -74,15 +78,15 @@ static void OLED_Fxn(void) {
         }
     }
 }
-/*! \fn initializeCurrentPoint
- *  \brief setsthe initial starting point to the upper left corner
+/*!
+ *  \brief set the initial starting point to the upper left corner
  *  \todo find out where is the starting point of the chars lower right, (lower left?)
  */
 static initializeCurrentPoint(void) {
     currentPosition.x = LEFT_MARGIN;
     currentPosition.y = UPPER_MARGIN;
 }
-/*! \fn updateCurrentPosition
+/*!
  * \brief calculate the line break.
  * Line break will be done if a next char will not fit into the row.
  */
@@ -91,7 +95,7 @@ static void updateCurrentPosition(void) {
         switchRow();
     }
 }
-/*! \fn isPrintableChar
+/*!
  * \brief function checks chars if they are printable chars to put on screen or control codes
  * if char is a printable char, the line break will called. Depending on which control code is given,
  * different actions are taken. in case '\b' the cursor moves on step backwards and a plain background is drawn.
@@ -125,7 +129,7 @@ static bool isPrintableChar (char c, color24 bgcolor) {
     }
     return false;
 }
-/*! \fn switchRow
+/*!
  * \brief switch the current working next row to the following
  */
 static void switchRow(void) {
