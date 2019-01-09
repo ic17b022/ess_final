@@ -1,4 +1,4 @@
-/*! \file commn.h
+/*! \file common.h
  *  \brief including all shared headers files osed by this project, mainly RTOS and driverlib headers
  *  \date Jan 1, 2019
  *  \author Valentin Platzgummer
@@ -6,6 +6,15 @@
 
 #ifndef COMMON_H_
 #define COMMON_H_
+// define doxygen module groups, works like preprocessor defines
+/*! \defgroup group_main Heart Rate 4  & OLED C
+ * @{
+ * \defgroup group_oled_res OLED Graphical Resources
+ * \defgroup group_oled_hal OLED Hardware Abstraction Layer
+ * \defgroup group_oled_app OLED Application Layer
+ * \defgroup group_comm Communication Layer
+ * @}
+ */
 
 /* Standard bool and standard int header */
 #include <stdbool.h>
@@ -20,7 +29,8 @@
 
 /* BIOS Header files */
 #include <ti/sysbios/BIOS.h>
-#include <ti/sysbios/knl/Task.h>
+#include <ti/sysbios/knl/Task.h>        // supplies the Task
+#include <ti/sysbios/knl/Semaphore.h>   // supplies the Semaphore
 
 /* Instrumentation headers */
 #include <ti/uia/runtime/LogSnapshot.h>
