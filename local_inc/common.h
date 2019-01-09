@@ -11,6 +11,7 @@
 /* Standard bool and standard int header */
 #include <stdbool.h>
 #include <stdint.h>
+#include <string.h>
 
 /* XDCtools Header files */
 #include <xdc/std.h>

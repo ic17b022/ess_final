@@ -6,6 +6,7 @@
 #include "local_inc/common.h"
 #include "local_inc/oled_display.h"
 #include "local_inc/UART_Task.h"
+#include "local_inc/heartrate.h"
 
 int main(void)
 {
@@ -16,6 +17,9 @@ int main(void)
 
     Board_initI2C();
     Board_initSPI();
+
+    //create I2C task
+    create_heartrate_task(15);
 
     // init the SPI with the actual system clock
     initSPI(ui32SysClock);
