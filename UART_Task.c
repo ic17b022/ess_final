@@ -13,6 +13,7 @@
 // ------------------------------------------------------------------------------ globals ---
 //! \brief stores the test variante selected by menu
 static uint8_t testcase;
+static bool isChanged;
 
 // ---------------------------------------------------------------------------- functions ---
 static void outputMenu(void);
@@ -62,13 +63,13 @@ void UARTFxn(UArg arg0, UArg arg1)
         // if input is '#' menu is selected. use next char to determine which selection is taken
         if (input == '#') {
             UART_read(uart, &followChar, 1);
-            UART_write(uart, &input, 1); // Remove this line to stop echoing!
 
             switch (followChar) {
             case '0':
             case '1':
             case '2':
                 testcase = followChar - '0';
+                isChanged = true;
                 System_printf("New Testcase: %u\n", testcase);
                 System_flush();
                 break;
@@ -129,8 +130,14 @@ static void outputMenu(void) {
     System_printf("Select needed by providing leading '#' before number.\n");
     System_flush();
 }
-uint8_t getTestcase() {
+uint8_t getTestcase(void) {
     return testcase;
+}
+void setChanged(bool _isChanged) {
+    isChanged = _isChanged;
+}
+bool getChanged(void) {
+    return isChanged;
 }
 // End Doxygen group
 //! @}

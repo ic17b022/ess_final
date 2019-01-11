@@ -88,6 +88,13 @@ static void OLED_Fxn(void) {
             System_flush();
         }
         uint8_t testcase = getTestcase();
+        bool isChanged = getChanged();
+        // if testcase change occcured, clear screen
+        if (isChanged == true) {
+            createBackgroundFromColor(blueColor);
+            initializeCurrentPoint();
+            setChanged(false);
+        }
         if (testcase == 0) {
             putValueFromInput("128\0", "Rate\0", "OK\0");
         } else if (testcase == 2) {
@@ -136,7 +143,7 @@ static void putValueFromInput(char *inputChar, char *title, char *status) {
  */
 static void initializeCurrentPoint(void) {
     currentPosition.x = 0;
-    currentPosition.y = 0;
+    currentPosition.y = font.fontWidth +2;;
 }
 /*!
  * \brief calculate the line break.
@@ -165,8 +172,13 @@ static bool isPrintableChar (char c, color24 bgcolor) {
     switch (c) {
     // move cursor back by 1 char + char spacing and draw space in case '\b'
     case 8:
-        currentPosition.x -= font.fontSpacing; // Spacing is font width + extra space for the next char
-        drawChar(0x20, &font, bgcolor, bgcolor, currentPosition);  // draw space without char feed
+        if (currentPosition.x <font.fontWidth) {
+            currentPosition.y -= font.fontHeading;
+            currentPosition.x = OLED_DISPLAY_X_MAX - font.fontSpacing;
+        } else {
+            currentPosition.x -= font.fontSpacing; // Spacing is font width + extra space for the next char
+            drawChar(0x20, &font, bgcolor, bgcolor, currentPosition);  // draw space without char feed
+        }
         break;
         // enable/ disable screen saver scrolling by pressing '\t'
     case 9:

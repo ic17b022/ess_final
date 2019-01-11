@@ -10,34 +10,6 @@
 
 // ----------------------------------------------------------------------------- includes ---
 //
-//#include <stdbool.h>
-//#include <stdint.h>
-//#include <inc/hw_memmap.h>
-//
-///* XDCtools Header files */
-//#include <xdc/std.h>
-//#include <xdc/cfg/global.h>
-//#include <xdc/runtime/System.h>
-//#include <xdc/runtime/Error.h>
-//#include <xdc/runtime/Memory.h>
-//
-///* BIOS Header files */
-//#include <ti/sysbios/BIOS.h>
-//#include <ti/sysbios/knl/Task.h>
-//
-///* TI-RTOS Header files */
-//#include <driverlib/sysctl.h>
-
-//#include <ti/sysbios/knl/Semaphore.h>
-///* Driverlib headers */
-//#include <driverlib/gpio.h>
-//#include <driverlib/pin_map.h>
-//
-///*Board Header files */
-//#include <Board.h>
-//#include <EK_TM4C1294XL.h>
-
-// ^^^^^  should be included by common.h ^^^^^
 #include <ti/drivers/UART.h>
 //! \addtogroup group_comm
 //! @{
@@ -52,6 +24,8 @@ char charContainer;
 
 // ---------------------------------------------------------------------------- functions ---
 extern uint8_t getTestcase();
+extern bool getChanged(void);
+extern void setChanged(bool _isChanged);
 /*!
  *  \brief Execute UART Task
  *  \param arg0 void

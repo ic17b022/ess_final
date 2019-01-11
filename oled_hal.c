@@ -190,11 +190,20 @@ void OLED_power_off(void) {
     commandSPI(OLED_DISPLAY_ON_OFF, 0x00);  // Display OFF
     wait_ms(5);           // wait 5 ms
 }
+
+static void adressEntireOLED(void) {
+    // select entire screen
+    commandSPI(OLED_MEM_X1, 0);
+    commandSPI(OLED_MEM_X2, OLED_DISPLAY_X_MAX);
+    commandSPI(OLED_MEM_Y1, 0);
+    commandSPI(OLED_MEM_Y2, OLED_DISPLAY_Y_MAX);
+}
 /*!
  * \brief create a background with an uniform color for the display-
  * \param rgbColor color24, background color in classic 24Bit RGB (no alpha channel)
  */
 void createBackgroundFromColor(color24 rgbColor) {
+    adressEntireOLED();
     color16 color;
     uint16_t i;
     color = createColorPixelFromRGB(rgbColor);
