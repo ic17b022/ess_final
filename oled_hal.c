@@ -192,6 +192,9 @@ void OLED_power_off(void) {
 }
 
 static void adressEntireOLED(void) {
+    // center the screen
+    commandSPI(OLED_DISPLAYSTART_X, 0);
+    commandSPI(OLED_DISPLAYSTART_Y, 0);
     // select entire screen
     commandSPI(OLED_MEM_X1, 0);
     commandSPI(OLED_MEM_X2, OLED_DISPLAY_X_MAX);
@@ -210,7 +213,7 @@ void createBackgroundFromColor(color24 rgbColor) {
     // enable DDRAM for writing
     writeOLED_indexRegister(OLED_DDRAM_DATA_ACCESS_PORT);
     // loop through all pixel of oled, register is 8 bit wide, but has to be 16, so double it!
-    for (i = 0; i < OLED_DISPLAY_X_MAX * OLED_DISPLAY_Y_MAX; i++) {
+    for (i = 0; i <= OLED_DISPLAY_X_MAX * OLED_DISPLAY_Y_MAX; i++) {
         writeOLED_dataRegister(color.upperByte);  // Upper Byte first Transmission S. 10/43
         writeOLED_dataRegister(color.lowerByte);
     }

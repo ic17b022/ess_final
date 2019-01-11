@@ -38,6 +38,7 @@ static bool isPrintableChar (char c, color24 bgcolor);
 static void initializeCurrentPoint(void);
 static void updateCurrentPosition(void);
 static void switchRow(void);
+static void setCursor(void);
 
 // ----------------------------------------------------------------------- implementation ---
 /*!
@@ -101,11 +102,15 @@ static void OLED_Fxn(void) {
             if (isPrintableChar(c, blueColor)) {
                 drawChar(c, &font, whiteColor, blueColor, currentPosition);
                 currentPosition.x += font.fontSpacing; // Note text is drawing backwards
+                setCursor();
             }
         }
     }
 }
 
+static void setCursor(void) {
+    drawChar('_', &font, whiteColor, blueColor, currentPosition);
+}
 static void putValueFromInput(char *inputChar, char *title, char *status) {
     // draw header
     initializeFont(&font, 2);
@@ -172,6 +177,7 @@ static bool isPrintableChar (char c, color24 bgcolor) {
     switch (c) {
     // move cursor back by 1 char + char spacing and draw space in case '\b'
     case 8:
+        drawChar(0x20, &font, bgcolor, bgcolor, currentPosition);  // delete cursor
         if (currentPosition.x <font.fontWidth) {
             currentPosition.y -= font.fontHeading;
             currentPosition.x = OLED_DISPLAY_X_MAX - font.fontSpacing;
@@ -179,6 +185,7 @@ static bool isPrintableChar (char c, color24 bgcolor) {
             currentPosition.x -= font.fontSpacing; // Spacing is font width + extra space for the next char
             drawChar(0x20, &font, bgcolor, bgcolor, currentPosition);  // draw space without char feed
         }
+        setCursor();
         break;
         // enable/ disable screen saver scrolling by pressing '\t'
     case 9:
