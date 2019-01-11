@@ -115,6 +115,7 @@ static void OLED_Fxn(void) {
 }
 
 static void setCursor(void) {
+    updateCurrentPosition();
     drawChar('_', &font, charCol, bgcol, currentPosition);
 }
 static void putValueFromInput(char *inputChar, char *title, char *status) {
@@ -154,14 +155,14 @@ static void putValueFromInput(char *inputChar, char *title, char *status) {
  */
 static void initializeCurrentPoint(void) {
     currentPosition.x = font.fontWidth + LEFT_MARGIN;
-    currentPosition.y = font.fontHeight + UPPER_MARGIN;
+    currentPosition.y = UPPER_MARGIN;
 }
 /*!
  * \brief calculate the line break.
  * Line break will be done if a next char will not fit into the row.
  */
 static void updateCurrentPosition(void) {
-    if ((currentPosition.x + 2) > (OLED_DISPLAY_X_MAX)) {
+    if (currentPosition.x > OLED_DISPLAY_X_MAX - font.fontSpacing) {
         switchRow();
     }
 }
@@ -185,8 +186,8 @@ static bool isPrintableChar (char c) {
     case 8:
         // if on upper left, stay there
         if ((currentPosition.x - font.fontSpacing < LEFT_MARGIN) && (currentPosition.y - font.fontHeading < UPPER_MARGIN)) {
-            currentPosition.x = font.fontWidth + LEFT_MARGIN;
-            currentPosition.y = font.fontHeight + UPPER_MARGIN;
+            currentPosition.x = OLED_DISPLAY_X_MAX - (font.fontWidth + LEFT_MARGIN);
+            currentPosition.y = UPPER_MARGIN;
         }
         deleteCharAtCurrentPoint();
         break;

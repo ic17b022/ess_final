@@ -213,7 +213,7 @@ void createBackgroundFromColor(color24 rgbColor) {
     // enable DDRAM for writing
     writeOLED_indexRegister(OLED_DDRAM_DATA_ACCESS_PORT);
     // loop through all pixel of oled, register is 8 bit wide, but has to be 16, so double it!
-    for (i = 0; i <= OLED_DISPLAY_X_MAX * OLED_DISPLAY_Y_MAX; i++) {
+    for (i = 0; i < OLED_DISPLAY_MAX_PIXEL; i++) {
         writeOLED_dataRegister(color.upperByte);  // Upper Byte first Transmission S. 10/43
         writeOLED_dataRegister(color.lowerByte);
     }
@@ -322,9 +322,9 @@ void OLED_power_on(void) {
     commandSPI(OLED_OSC_ADJUST,0x03);              // frame rate : 95Hz
     /* Set active display area of panel */
     commandSPI(OLED_DISPLAY_X1,0x00);
-    commandSPI(OLED_DISPLAY_X2,0x5F);
+    commandSPI(OLED_DISPLAY_X2,OLED_DISPLAY_X_MAX);
     commandSPI(OLED_DISPLAY_Y1,0x00);
-    commandSPI(OLED_DISPLAY_Y2,0x5F);
+    commandSPI(OLED_DISPLAY_Y2,OLED_DISPLAY_Y_MAX);
     /* Select the RGB data format and set the initial state of RGB interface port */
     commandSPI(OLED_RGB_IF,0x00);                 // RGB 8bit interface
     /* Set RGB polarity */

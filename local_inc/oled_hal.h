@@ -96,9 +96,9 @@ typedef struct rect {
 #define OLED_MEMORY_WRITE_READ_HORZ_INC_VERT_DEC 2  //!< horizontal increment, vertical decrement, starts lower left
 #define OLED_MEMORY_WRITE_READ_HORZ_DEC_VERT_DEC 3  //!< horizontal decrement, vertical decrement, starts lower right
 
-#define OLED_DISPLAY_X_MAX 96               //!< maximum amount of pixel x coordinate
-#define OLED_DISPLAY_Y_MAX 96               //!< maximum amount of pixel y coordinate
-#define OLED_DISPLAY_MAX_PIXEL 9216         //!< maximum amount of pixel square
+#define OLED_DISPLAY_X_MAX 0x5F               //!< maximum amount of pixel x coordinate
+#define OLED_DISPLAY_Y_MAX 0x5F               //!< maximum amount of pixel y coordinate
+#define OLED_DISPLAY_MAX_PIXEL 0x2400           //!< maximum amount of pixel square
 #define OLED_DISPLAY_BYTES_PIXEL 2          //!< maximum amount of pixel x coordinate
 
 // Control pins for OLED Boosterpack 1
