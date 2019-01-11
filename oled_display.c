@@ -69,7 +69,7 @@ static void OLED_Fxn(void) {
     OLED_power_on();
     createBackgroundFromImage(cool_image);
     Task_sleep(10000);
-    fontsize = 3;
+    fontsize = 2;
     createBackgroundFromColor(blueColor);
     initializeCurrentPoint();
     bool sem_timeout;

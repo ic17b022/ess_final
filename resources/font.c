@@ -31,7 +31,7 @@ void initializeFont(fontContainer *fc, uint8_t size) {
             fc->fontDepthByte = 2;
             fc->fontHeight = 26;
             fc->fontWidth = 15;             // 15 effective font width, nominal 16
-            fc->fontSpacing = 18;
+            fc->fontSpacing = 16;
             fc->fontHeading = 28;
             fc->charArrayLength = 52;
             fc->font = font2;

@@ -21,6 +21,7 @@
 
 // ---------------------------------------------------------------------------- functions ---
 static void initializeSemaphore(void);
+static void convertDataToChar(void);
 
 // ----------------------------------------------------------------------- implementation ---
 /*!
@@ -81,7 +82,13 @@ static void initializeSemaphore(void) {
         System_printf("Failed creating output Semaphore\n");
         System_flush();
     }
-
 }
 
+static void convertDataToChar(void) {
+    uint8_t result = snprint(pulseChar, 3, "%u",pulse);
+    if (result == 0) {
+        System_printf("Not written any pulse value.\n");
+        System_flush();
+    }
+}
 //! @}
