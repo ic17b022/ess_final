@@ -15,13 +15,13 @@
 //! @{
 // ------------------------------------------------------------------------------ defines ---
 //! \brief left margin of text window
-#define LEFT_MARGIN 20
+#define LEFT_MARGIN 4
 //! \brief right margin of text window
-#define RIGHT_MARGIN 20
+#define RIGHT_MARGIN 4
 //! \brief top margin of text window
-#define UPPER_MARGIN 20
+#define UPPER_MARGIN 4
 //! \brief bottom margin of text window
-#define LOWER_MARGIN 20
+#define LOWER_MARGIN 4
 // ------------------------------------------------------------------------------ globals ---
 //! \brief contains the actual position of the cursor in window
 static volatile point currentPosition;
@@ -31,14 +31,18 @@ static volatile bool isScrolling;
 static volatile uint8_t fontsize;
 //! \brief used font needed for calculation purposes
 static fontContainer font;
+static color24 charCol;
+static color24 bgcol;
+
 // ---------------------------------------------------------------------------- functions ---
 static void OLED_Fxn(void);
 static void putValueFromInput(char *inputChar, char *title, char *status);
-static bool isPrintableChar (char c, color24 bgcolor);
+static bool isPrintableChar (char c);
 static void initializeCurrentPoint(void);
 static void updateCurrentPosition(void);
 static void switchRow(void);
 static void setCursor(void);
+static void deleteCharAtCurrentPoint();
 
 // ----------------------------------------------------------------------- implementation ---
 /*!
@@ -72,7 +76,9 @@ static void OLED_Fxn(void) {
     createBackgroundFromImage(cool_image);
     Task_sleep(3000);
     fontsize = 2;
-    createBackgroundFromColor(blueColor);
+    bgcol = blueColor;
+    charCol = whiteColor;
+    createBackgroundFromColor(bgcol);
     initializeCurrentPoint();
     bool sem_timeout;
 
@@ -92,15 +98,15 @@ static void OLED_Fxn(void) {
         bool isChanged = getChanged();
         // if testcase change occcured, clear screen
         if (isChanged == true) {
-            createBackgroundFromColor(blueColor);
+            createBackgroundFromColor(bgcol);
             initializeCurrentPoint();
             setChanged(false);
         }
         if (testcase == 0) {
-            putValueFromInput("128\0", "Rate\0", "OK\0");
+            putValueFromInput("128\0", "\3 Rate\0", "Stat: OK\0");
         } else if (testcase == 2) {
-            if (isPrintableChar(c, blueColor)) {
-                drawChar(c, &font, whiteColor, blueColor, currentPosition);
+            if (isPrintableChar(c)) {
+                drawChar(c, &font, charCol, bgcol, currentPosition);
                 currentPosition.x += font.fontSpacing; // Note text is drawing backwards
                 setCursor();
             }
@@ -109,7 +115,7 @@ static void OLED_Fxn(void) {
 }
 
 static void setCursor(void) {
-    drawChar('_', &font, whiteColor, blueColor, currentPosition);
+    drawChar('_', &font, charCol, bgcol, currentPosition);
 }
 static void putValueFromInput(char *inputChar, char *title, char *status) {
     // draw header
@@ -118,7 +124,7 @@ static void putValueFromInput(char *inputChar, char *title, char *status) {
     currentPosition.y = 4;
     uint8_t i = 0;
     while (title[i] != 0) {
-        drawChar(title[i++], &font, whiteColor, blueColor, currentPosition);
+        drawChar(title[i++], &font, charCol, bgcol, currentPosition);
         currentPosition.x += font.fontSpacing; // Note text is drawing backwards
     }
     currentPosition.y += font.fontHeight;
@@ -128,7 +134,7 @@ static void putValueFromInput(char *inputChar, char *title, char *status) {
     i= 0;
     currentPosition.x = font.fontWidth + 4;
     while (inputChar[i] != 0) {
-        drawChar(inputChar[i++], &font, whiteColor, blueColor, currentPosition);
+        drawChar(inputChar[i++], &font, charCol, bgcol, currentPosition);
         currentPosition.x += font.fontSpacing;
 
     }
@@ -138,7 +144,7 @@ static void putValueFromInput(char *inputChar, char *title, char *status) {
     currentPosition.x = font.fontWidth + 4;
     currentPosition.y = OLED_DISPLAY_Y_MAX - font.fontHeight;
     while (status[i] != 0) {
-        drawChar(status[i++], &font, whiteColor, blueColor, currentPosition);
+        drawChar(status[i++], &font, charCol, bgcol, currentPosition);
         currentPosition.x += font.fontSpacing;
     }
 }
@@ -147,15 +153,15 @@ static void putValueFromInput(char *inputChar, char *title, char *status) {
  *  \todo find out where is the starting point of the chars lower right, (lower left?)
  */
 static void initializeCurrentPoint(void) {
-    currentPosition.x = 0;
-    currentPosition.y = font.fontWidth +2;;
+    currentPosition.x = font.fontWidth + LEFT_MARGIN;
+    currentPosition.y = font.fontHeight + UPPER_MARGIN;
 }
 /*!
  * \brief calculate the line break.
  * Line break will be done if a next char will not fit into the row.
  */
 static void updateCurrentPosition(void) {
-    if ((currentPosition.x + font.fontWidth) > (OLED_DISPLAY_X_MAX)) {
+    if ((currentPosition.x + 2) > (OLED_DISPLAY_X_MAX)) {
         switchRow();
     }
 }
@@ -168,7 +174,7 @@ static void updateCurrentPosition(void) {
  * \param bgcolor color24, the given background color for '\b' operation
  * \return true, if char is printable character, false in other case.
  */
-static bool isPrintableChar (char c, color24 bgcolor) {
+static bool isPrintableChar (char c) {
     if (c > 19) {
         updateCurrentPosition();  // Check position only if real char to draw
         return true;
@@ -177,15 +183,12 @@ static bool isPrintableChar (char c, color24 bgcolor) {
     switch (c) {
     // move cursor back by 1 char + char spacing and draw space in case '\b'
     case 8:
-        drawChar(0x20, &font, bgcolor, bgcolor, currentPosition);  // delete cursor
-        if (currentPosition.x <font.fontWidth) {
-            currentPosition.y -= font.fontHeading;
-            currentPosition.x = OLED_DISPLAY_X_MAX - font.fontSpacing;
-        } else {
-            currentPosition.x -= font.fontSpacing; // Spacing is font width + extra space for the next char
-            drawChar(0x20, &font, bgcolor, bgcolor, currentPosition);  // draw space without char feed
+        // if on upper left, stay there
+        if ((currentPosition.x - font.fontSpacing < LEFT_MARGIN) && (currentPosition.y - font.fontHeading < UPPER_MARGIN)) {
+            currentPosition.x = font.fontWidth + LEFT_MARGIN;
+            currentPosition.y = font.fontHeight + UPPER_MARGIN;
         }
-        setCursor();
+        deleteCharAtCurrentPoint();
         break;
         // enable/ disable screen saver scrolling by pressing '\t'
     case 9:
@@ -200,11 +203,24 @@ static bool isPrintableChar (char c, color24 bgcolor) {
     }
     return false;
 }
+static void deleteCharAtCurrentPoint() {
+    // delete cursor
+    drawChar(0x20, &font, bgcol, bgcol, currentPosition);
+    if ((currentPosition.x - font.fontSpacing) <  LEFT_MARGIN) {
+        currentPosition.y -= font.fontHeading;
+        currentPosition.x = OLED_DISPLAY_X_MAX - font.fontSpacing - (OLED_DISPLAY_X_MAX % font.fontSpacing);
+        drawChar(0x20, &font, bgcol, bgcol, currentPosition);  // draw space without char feed
+    } else {
+        currentPosition.x -= font.fontSpacing; // Spacing is font width + extra space for the next char
+        drawChar(0x20, &font, bgcol, bgcol, currentPosition);  // draw space without char feed
+    }
+    setCursor();
+}
 /*!
  * \brief switch the current working next row to the following
  */
 static void switchRow(void) {
-    currentPosition.x = LEFT_MARGIN;
+    currentPosition.x = font.fontWidth + LEFT_MARGIN;
     if (currentPosition.y + font.fontHeading > OLED_DISPLAY_Y_MAX) {
         currentPosition.y = UPPER_MARGIN;
     } else {
