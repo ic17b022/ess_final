@@ -45,11 +45,13 @@
 
 Semaphore_Handle sem;
 char charContainer;
+
 // ------------------------------------------------------------------------------ defines ---
 /// \def UART_BAUD_RATE used baudrate for the UART connection
 #define UART_BAUD_RATE 9600
 
 // ---------------------------------------------------------------------------- functions ---
+extern uint8_t getTestcase();
 /*!
  *  \brief Execute UART Task
  *  \param arg0 void

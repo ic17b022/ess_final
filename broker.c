@@ -91,4 +91,5 @@ static void convertDataToChar(void) {
         System_flush();
     }
 }
+
 //! @}

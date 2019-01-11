@@ -4,17 +4,25 @@
  * \author Valentin Platzgummer ic17b096
  * \date Jan, 02 2019
  */
+// ----------------------------------------------------------------------------- includes ---
 #include "local_inc/common.h"
 #include "local_inc/UART_Task.h"
 #include "local_inc/broker.h"
 //! \addtogroup group_comm
 //! @{
+// ------------------------------------------------------------------------------ globals ---
+//! \brief stores the test variante selected by menu
+static uint8_t testcase;
 
+// ---------------------------------------------------------------------------- functions ---
+static void outputMenu(void);
 /*!
  * \brief UART Task receives keystrokes from an attached Terminal via UART
  * The keystroke get tested, and if the comply with the valid chars the char get appended to
  * the global char buffer. And a semaphore get posted
  */
+
+// ----------------------------------------------------------------------- implementation ---
 void UARTFxn(UArg arg0, UArg arg1)
 {
     UART_Handle uart;
@@ -45,18 +53,39 @@ void UARTFxn(UArg arg0, UArg arg1)
     if (sem == NULL) {
         System_abort("Error creating the Semaphore");
     }
+    outputMenu();
     /* Loop forever echoing */
     while (1) {
-        char input;
+        char input, followChar;
         UART_read(uart, &input, 1);
-        // Keystroke in the valid region, send it to the oled_display.c
-        if (input >= 0x08 && input <= 0x7F) {
-           // charContainer= input;
-           // Semaphore_post(sem);  // Semaphore get posted on each entered char
-            uartChar = input;
-            Semaphore_post(uart_sem); // Semaphore get posted to broker
-        }
         UART_write(uart, &input, 1); // Remove this line to stop echoing!
+        // if input is '#' menu is selected. use next char to determine which selection is taken
+        if (input == '#') {
+            UART_read(uart, &followChar, 1);
+            UART_write(uart, &input, 1); // Remove this line to stop echoing!
+
+            switch (followChar) {
+            case '0':
+            case '1':
+            case '2':
+                testcase = followChar - '0';
+                System_printf("New Testcase: %u\n", testcase);
+                System_flush();
+                break;
+            default:
+                // pipe the input to standard out
+                break;
+            }
+
+            // Keystroke in the valid region, send it to the oled_display.c
+            if (input >= 0x08 && input <= 0x7F) {
+                // charContainer= input;
+                // Semaphore_post(sem);  // Semaphore get posted on each entered char
+                uartChar = input;
+                Semaphore_post(uart_sem); // Semaphore get posted to broker
+            }
+            UART_write(uart, &input, 1); // Remove this line to stop echoing!
+        }
     }
 }
 /*!
@@ -91,6 +120,17 @@ void setup_UART_Task(xdc_String name, uint8_t priority)
     if (taskUART == NULL) {
         System_abort("TaskUART create failed");
     }
+}
+static void outputMenu(void) {
+    System_printf("Menu list:\n");
+    System_printf("\n#0 Heartrate (Input) In -> OLED C (Output) out\n");
+    System_printf("#1 Heartrate (Input) In -> UART out\n");
+    System_printf("#2 UART In -> OLED C (Output) out\n");
+    System_printf("Select needed by providing leading '#' before number.\n");
+    System_flush();
+}
+uint8_t getTestcase() {
+    return testcase;
 }
 // End Doxygen group
 //! @}
