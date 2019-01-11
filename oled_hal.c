@@ -254,7 +254,7 @@ void toggleDownScroll(bool enable) {
     // Enable/ disable Screen saver
     commandSPI(0xD0, enable<<7);
     // Configure screen saver update time -> 0xFF 2sec of Time
-    commandSPI(0xD3, 0xFF);
+    commandSPI(0xD3, 0x00);
     // Screen Saver 'Down Scroll';
     commandSPI(0xD2, enable<<1);
     // Set LED04 to signaling Screen saver mode ON

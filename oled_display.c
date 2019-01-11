@@ -162,7 +162,7 @@ static void initializeCurrentPoint(void) {
  * Line break will be done if a next char will not fit into the row.
  */
 static void updateCurrentPosition(void) {
-    if (currentPosition.x > OLED_DISPLAY_X_MAX - font.fontSpacing) {
+    if (currentPosition.x > OLED_DISPLAY_X_MAX ) {
         switchRow();
     }
 }
@@ -209,7 +209,7 @@ static void deleteCharAtCurrentPoint() {
     drawChar(0x20, &font, bgcol, bgcol, currentPosition);
     if ((currentPosition.x - font.fontSpacing) <  LEFT_MARGIN) {
         currentPosition.y -= font.fontHeading;
-        currentPosition.x = OLED_DISPLAY_X_MAX - font.fontSpacing - (OLED_DISPLAY_X_MAX % font.fontSpacing);
+        currentPosition.x = OLED_DISPLAY_X_MAX - font.fontSpacing - ((OLED_DISPLAY_X_MAX - LEFT_MARGIN) % font.fontSpacing);
         drawChar(0x20, &font, bgcol, bgcol, currentPosition);  // draw space without char feed
     } else {
         currentPosition.x -= font.fontSpacing; // Spacing is font width + extra space for the next char
