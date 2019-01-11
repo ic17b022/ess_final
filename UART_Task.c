@@ -76,17 +76,17 @@ void UARTFxn(UArg arg0, UArg arg1)
                 // pipe the input to standard out
                 break;
             }
-
-            // Keystroke in the valid region, send it to the oled_display.c
-            if (input >= 0x08 && input <= 0x7F) {
-                // charContainer= input;
-                // Semaphore_post(sem);  // Semaphore get posted on each entered char
-                uartChar = input;
-                Semaphore_post(uart_sem); // Semaphore get posted to broker
-            }
-            UART_write(uart, &input, 1); // Remove this line to stop echoing!
         }
+        // Keystroke in the valid region, send it to the oled_display.c
+        if (input >= 0x08 && input <= 0x7F) {
+            // charContainer= input;
+            // Semaphore_post(sem);  // Semaphore get posted on each entered char
+            uartChar = input;
+            Semaphore_post(uart_sem); // Semaphore get posted to broker
+        }
+        UART_write(uart, &input, 1); // Remove this line to stop echoing!
     }
+
 }
 /*!
  * \brief create a new UART Task and initialize it with the necessary parameters.
