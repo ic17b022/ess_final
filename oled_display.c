@@ -43,6 +43,8 @@ static void updateCurrentPosition(void);
 static void switchRow(void);
 static void setCursor(void);
 static void deleteCharAtCurrentPoint();
+static bool isPointUpperLeft(point current);
+static bool isPointLowerRight (point current);
 
 // ----------------------------------------------------------------------- implementation ---
 /*!
@@ -79,10 +81,10 @@ static void OLED_Fxn(void) {
     bgcol = blueColor;
     charCol = whiteColor;
     createBackgroundFromColor(bgcol);
-    initializeCurrentPoint();
     bool sem_timeout;
 
     initializeFont(&font, fontsize);
+    initializeCurrentPoint();
 
     while (1) {
 
@@ -185,11 +187,10 @@ static bool isPrintableChar (char c) {
     // move cursor back by 1 char + char spacing and draw space in case '\b'
     case 8:
         // if on upper left, stay there
-        if ((currentPosition.x - font.fontSpacing < LEFT_MARGIN) && (currentPosition.y - font.fontHeading < UPPER_MARGIN)) {
-            currentPosition.x = OLED_DISPLAY_X_MAX - (font.fontWidth + LEFT_MARGIN);
-            currentPosition.y = UPPER_MARGIN;
-        }
-        deleteCharAtCurrentPoint();
+        if (isPointUpperLeft(currentPosition))
+            initializeCurrentPoint();
+        else
+            deleteCharAtCurrentPoint();
         break;
         // enable/ disable screen saver scrolling by pressing '\t'
     case 9:
@@ -207,9 +208,13 @@ static bool isPrintableChar (char c) {
 static void deleteCharAtCurrentPoint() {
     // delete cursor
     drawChar(0x20, &font, bgcol, bgcol, currentPosition);
+    // is cursor at begin of display?
     if ((currentPosition.x - font.fontSpacing) <  LEFT_MARGIN) {
-        currentPosition.y -= font.fontHeading;
-        currentPosition.x = OLED_DISPLAY_X_MAX - font.fontSpacing - ((OLED_DISPLAY_X_MAX - LEFT_MARGIN) % font.fontSpacing);
+        currentPosition.y -= font.fontHeading; // jump 1 row back
+        // set cursor at last position of this row
+        currentPosition.x = OLED_DISPLAY_X_MAX - ((OLED_DISPLAY_X_MAX - LEFT_MARGIN) % font.fontSpacing) - (font.fontSpacing - font.fontWidth);
+        System_printf("current_x: %u\n", currentPosition.x);
+        System_flush();
         drawChar(0x20, &font, bgcol, bgcol, currentPosition);  // draw space without char feed
     } else {
         currentPosition.x -= font.fontSpacing; // Spacing is font width + extra space for the next char
@@ -227,6 +232,16 @@ static void switchRow(void) {
     } else {
         currentPosition.y += font.fontHeading;
     }
+}
+static bool isPointUpperLeft(point current) {
+    if ((current.x - font.fontSpacing <= LEFT_MARGIN) && (current.y <= UPPER_MARGIN))
+        return true;
+    return false;
+}
+static bool isPointLowerRight (point current) {
+    if ((current.x + font.fontSpacing >= RIGHT_MARGIN) && (current.y >= OLED_DISPLAY_Y_MAX))
+        return true;
+    return false;
 }
 // Close Doxygen group
 //! @}
