@@ -44,7 +44,8 @@ static void switchRow(void);
 static void setCursor(void);
 static void deleteCharAtCurrentPoint();
 static bool isPointUpperLeft(point current);
-static bool isPointLowerRight (point current);
+static bool isPointPrelastRow (point current);
+static void scrollRow (point current);
 
 // ----------------------------------------------------------------------- implementation ---
 /*!
@@ -77,7 +78,7 @@ static void OLED_Fxn(void) {
     OLED_power_on();
     createBackgroundFromImage(cool_image);
     Task_sleep(3000);
-    fontsize = 2;
+    fontsize = 1;
     bgcol = blueColor;
     charCol = whiteColor;
     createBackgroundFromColor(bgcol);
@@ -88,6 +89,8 @@ static void OLED_Fxn(void) {
 
     while (1) {
 
+        // here code for calculating cursor position and initialize the scrolling functionality.
+        scrollRow(currentPosition);
         // sem_timeout = Semaphore_pend(sem, BIOS_WAIT_FOREVER);
         //        char c = charContainer;
         sem_timeout = Semaphore_pend(output_sem, BIOS_WAIT_FOREVER);
@@ -108,6 +111,8 @@ static void OLED_Fxn(void) {
             putValueFromInput("128\0", "\3 Rate\0", "Stat: OK\0");
         } else if (testcase == 2) {
             if (isPrintableChar(c)) {
+                // here code for calculating cursor position and initialize the scrolling functionality.
+                // scrollRow(currentPosition);
                 drawChar(c, &font, charCol, bgcol, currentPosition);
                 currentPosition.x += font.fontSpacing; // Note text is drawing backwards
                 setCursor();
@@ -115,14 +120,22 @@ static void OLED_Fxn(void) {
         }
     }
 }
-
+/*!
+ * \brief set a cursor of type '_' at the current position to give user a visual feedback
+ */
 static void setCursor(void) {
     updateCurrentPosition();
     drawChar('_', &font, charCol, bgcol, currentPosition);
 }
+/*!
+ * \brief output the incoming value in a formatted form.
+ * \param inputChar value (given as 0-terminated c-String) heartrate
+ * \param title header for the formatted output. (c-String 0-terminated)
+ * \param status a fedback to the user about the status of the measurement (0-terminated)
+ */
 static void putValueFromInput(char *inputChar, char *title, char *status) {
     // draw header
-    initializeFont(&font, 2);
+    initializeFont(&font, 1);
     currentPosition.x = font.fontWidth + 4;
     currentPosition.y = 4;
     uint8_t i = 0;
@@ -133,7 +146,7 @@ static void putValueFromInput(char *inputChar, char *title, char *status) {
     currentPosition.y += font.fontHeight;
 
     // draw input value
-    initializeFont(&font, 3);
+    initializeFont(&font, 2);
     i= 0;
     currentPosition.x = font.fontWidth + 4;
     while (inputChar[i] != 0) {
@@ -142,7 +155,7 @@ static void putValueFromInput(char *inputChar, char *title, char *status) {
 
     }
     //draw status
-    initializeFont(&font, 1);
+    initializeFont(&font, 0);
     i= 0;
     currentPosition.x = font.fontWidth + 4;
     currentPosition.y = OLED_DISPLAY_Y_MAX - font.fontHeight;
@@ -182,6 +195,9 @@ static bool isPrintableChar (char c) {
         updateCurrentPosition();  // Check position only if real char to draw
         return true;
     }
+    // delete cursor, because char is not a printable one
+    drawChar(0x20, &font, bgcol, bgcol, currentPosition);
+
     // switch upon incoming control code. more control codes are possible.
     switch (c) {
     // move cursor back by 1 char + char spacing and draw space in case '\b'
@@ -192,10 +208,12 @@ static bool isPrintableChar (char c) {
         else
             deleteCharAtCurrentPoint();
         break;
-        // enable/ disable screen saver scrolling by pressing '\t'
+        // increases font size
     case 9:
-        isScrolling ^= 1;
-        toggleDownScroll(isScrolling);
+        fontsize = ++fontsize % 3;
+        initializeFont(&font, fontsize);
+        // clear screen
+        createBackgroundFromColor(bgcol);
         break;
         // insert line break if code is '\n'
     case 10:
@@ -203,8 +221,15 @@ static bool isPrintableChar (char c) {
         switchRow();
         break;
     }
+    // now set cursor for all.
+    setCursor();
     return false;
 }
+
+/*!
+ * \brief delete the character at the current point and step on character space back
+ * Deleting is implemented to work over multiple lines, the coordinates get calculated accordingly
+ */
 static void deleteCharAtCurrentPoint() {
     // delete cursor
     drawChar(0x20, &font, bgcol, bgcol, currentPosition);
@@ -227,21 +252,37 @@ static void deleteCharAtCurrentPoint() {
  */
 static void switchRow(void) {
     currentPosition.x = font.fontWidth + LEFT_MARGIN;
-    if (currentPosition.y + font.fontHeading > OLED_DISPLAY_Y_MAX) {
+    // is end of last line? jump to upper left.
+    if (currentPosition.y + 2*font.fontHeading > OLED_DISPLAY_Y_MAX) {
         currentPosition.y = UPPER_MARGIN;
     } else {
         currentPosition.y += font.fontHeading;
     }
 }
+/*! \brief evaluate if current point is 1 character space before first point in display.
+ * Take the given margins in account
+ * \param current current point to evaluate
+ * \return true if point is first point, false in all other cases
+ */
 static bool isPointUpperLeft(point current) {
     if ((current.x - font.fontSpacing <= LEFT_MARGIN) && (current.y <= UPPER_MARGIN))
         return true;
     return false;
 }
-static bool isPointLowerRight (point current) {
-    if ((current.x + font.fontSpacing >= RIGHT_MARGIN) && (current.y >= OLED_DISPLAY_Y_MAX))
+// this function is useful to detect end of display in order to scroll down, while typing is still ongoing.
+static bool isPointPrelastRow (point current) {
+    if (current.y + 3 * font.fontSpacing >= OLED_DISPLAY_Y_MAX)
         return true;
     return false;
+}
+static void scrollRow (point current) {
+    if (isPointPrelastRow(currentPosition)) {
+        isScrolling = true;
+    }
+    else
+        isScrolling = false;
+    System_printf("cursor at x: %u, y: %u\n", currentPosition.x, currentPosition.y);
+    toggleUpScroll(isScrolling);
 }
 // Close Doxygen group
 //! @}

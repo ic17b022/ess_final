@@ -250,13 +250,13 @@ static color16 createColorPixelFromRGB(color24 rgbData) {
  * \brief enables or disables the screensaver scroll down functionality (build in)
  * \param enable 1 for enabling function, 0 for disabling
  */
-void toggleDownScroll(bool enable) {
+void toggleUpScroll(bool enable) {
     // Enable/ disable Screen saver
     commandSPI(0xD0, enable<<7);
     // Configure screen saver update time -> 0xFF 2sec of Time
-    commandSPI(0xD3, 0x00);
+    commandSPI(0xD3, 0x08);
     // Screen Saver 'Down Scroll';
-    commandSPI(0xD2, enable<<1);
+    commandSPI(0xD2, enable<<1 | enable);
     // Set LED04 to signaling Screen saver mode ON
     SETBIT(LED04, enable);
 }

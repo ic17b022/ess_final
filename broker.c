@@ -21,7 +21,7 @@
 
 // ---------------------------------------------------------------------------- functions ---
 static void initializeSemaphore(void);
-static void convertDataToChar(void);
+static void convertDataToChar(uint8_t inValue, char *outchar);
 
 // ----------------------------------------------------------------------- implementation ---
 /*!
@@ -56,7 +56,8 @@ extern void Broker_task(void) {
     while (1) {
         // receive char from UART task
         Semaphore_pend(uart_sem, BIOS_WAIT_FOREVER);
-        System_printf("Char from UART: %c", uartChar);
+        System_printf("Char from UART: %c\n", uartChar);
+        System_flush();
         // Convert input ...
 
         oledChar = uartChar;
@@ -64,6 +65,11 @@ extern void Broker_task(void) {
         Semaphore_post(output_sem);
     }
 }
+/*!
+ * \brief initialize both used semaphores
+ * output_sem sempahore used to synchronize between broker and oled module
+ * uart_sem semaphore used to synchronize between broker and uart
+ */
 static void initializeSemaphore(void) {
     Error_Block er;
     Semaphore_Params output_sem_parms;
@@ -83,9 +89,12 @@ static void initializeSemaphore(void) {
         System_flush();
     }
 }
-
-static void convertDataToChar(void) {
-    uint8_t result = snprint(pulseChar, 3, "%u",pulse);
+/*!
+ * \brief convert ingoing integer to char with equivalent ascii
+ * \param inValue integer to be converted. Note max 3 digits get used (uint8_t)
+ */
+static void convertDataToChar(uint8_t inValue, char *outchar) {
+    uint8_t result = snprint(outchar, 3, "%u", inValue);
     if (result == 0) {
         System_printf("Not written any pulse value.\n");
         System_flush();

@@ -17,7 +17,7 @@
 void initializeFont(fontContainer *fc, uint8_t size) {
     switch (size) {
         // Font Bitsize 1Byte 7x14
-        case 1:
+        case 0:
             fc->fontDepthByte = 1;
             fc->fontHeight = 14;
             fc->fontWidth = 7;              // 7 effective font width, nominal 8
@@ -27,7 +27,7 @@ void initializeFont(fontContainer *fc, uint8_t size) {
             fc->font = font1;
             break;
             //Font Bitsize 12Byte 14x26
-        case 2:
+        case 1:
             fc->fontDepthByte = 2;
             fc->fontHeight = 26;
             fc->fontWidth = 15;             // 15 effective font width, nominal 16
@@ -37,7 +37,7 @@ void initializeFont(fontContainer *fc, uint8_t size) {
             fc->font = font2;
             break;
             // Font Bitsize 3Byte 24x36
-        case 3:
+        case 2:
             fc->fontDepthByte = 3;
             fc->fontHeight = 36;
             fc->fontWidth = 23;             // 23 effective font width, nominal 22
