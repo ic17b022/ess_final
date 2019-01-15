@@ -38,7 +38,7 @@ static color24 bgcol;
 static void OLED_Fxn(void);
 static void putValueFromInput(char *inputChar, char *title, char *status);
 static bool isPrintableChar (char c);
-static void initializeCurrentPoint(void);
+static void cursorUpperLeft(void);
 static void updateCurrentPosition(void);
 static void switchRow(void);
 static void setCursor(void);
@@ -85,7 +85,7 @@ static void OLED_Fxn(void) {
     bool sem_timeout;
 
     initializeFont(&font, fontsize);
-    initializeCurrentPoint();
+    cursorUpperLeft();
 
     while (1) {
 
@@ -104,7 +104,7 @@ static void OLED_Fxn(void) {
         // if testcase change occcured, clear screen
         if (isChanged == true) {
             createBackgroundFromColor(bgcol);
-            initializeCurrentPoint();
+            cursorUpperLeft();
             setChanged(false);
         }
         if (testcase == 0) {
@@ -166,9 +166,9 @@ static void putValueFromInput(char *inputChar, char *title, char *status) {
 }
 /*!
  *  \brief set the initial starting point to the upper left corner
- *  \todo find out where is the starting point of the chars lower right, (lower left?)
+ *  Note: the fonts origin is fonts upper right corner.
  */
-static void initializeCurrentPoint(void) {
+static void cursorUpperLeft(void) {
     currentPosition.x = font.fontWidth + LEFT_MARGIN;
     currentPosition.y = UPPER_MARGIN;
 }
@@ -204,7 +204,7 @@ static bool isPrintableChar (char c) {
     case 8:
         // if on upper left, stay there
         if (isPointUpperLeft(currentPosition))
-            initializeCurrentPoint();
+            cursorUpperLeft();
         else
             deleteCharAtCurrentPoint();
         break;
@@ -214,6 +214,8 @@ static bool isPrintableChar (char c) {
         initializeFont(&font, fontsize);
         // clear screen
         createBackgroundFromColor(bgcol);
+        // begin upper left
+        cursorUpperLeft();
         break;
         // insert line break if code is '\n'
     case 10:
@@ -249,6 +251,7 @@ static void deleteCharAtCurrentPoint() {
 }
 /*!
  * \brief switch the current working next row to the following
+ * Note: fonts origin is upper right, therefore last row is twice the height of the font
  */
 static void switchRow(void) {
     currentPosition.x = font.fontWidth + LEFT_MARGIN;
@@ -275,7 +278,18 @@ static bool isPointPrelastRow (point current) {
         return true;
     return false;
 }
+/*!
+ *  \brief enables/ disables the scroll functionality of the SEPS114A
+ *  if heartrate display is activated, scrolling is alwasy disabled
+ *  \param current the actual cursor position, get evaluated and if cursor is on prelast position
+ *  begin to scroll
+ */
 static void scrollRow (point current) {
+    // disable scrolling when displaying heartrate
+    if (getTestcase() == 0) {
+        toggleUpScroll(false);
+        return;
+    }
     if (isPointPrelastRow(currentPosition)) {
         isScrolling = true;
     }

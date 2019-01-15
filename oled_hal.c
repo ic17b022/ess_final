@@ -265,7 +265,7 @@ void toggleUpScroll(bool enable) {
  * \brief write to the OLEDs Controller Index register.
  * \param reg index of the requested register
  */
-static void writeOLED_indexRegister(uint8_t reg) {
+static void writeOLED_indexRegister_Tiva(uint8_t reg) {
     SETBIT(OLED_RW, 0); // Set the peripheral to write -> mcu write to periph
     // Write to register
     SETBIT(OLED_CS, 0);
@@ -278,11 +278,44 @@ static void writeOLED_indexRegister(uint8_t reg) {
  * \brief write to the OLEDs Controller data register.
  * \param reg value for the selected register
  */
-static void writeOLED_dataRegister(uint8_t data) {
+static void writeOLED_dataRegister_Tiva(uint8_t data) {
     SETBIT(OLED_CS, 0);
     SETBIT(OLED_DC, 1);
     SSIDataPut(OLED_SSI_BASE, data);
     while(SSIBusy(OLED_SSI_BASE));
+    SETBIT(OLED_CS, 1);
+}
+static void writeOLED_dataRegister(uint8_t data) {
+    uint8_t transmitBuf[1], ret;
+    transmitBuf[0] = data;
+    SPI_Transaction spiTransaction;
+    spiTransaction.count = 1;
+    spiTransaction.txBuf = transmitBuf;
+    spiTransaction.rxBuf = NULL;
+    SETBIT(OLED_CS, 0);
+    SETBIT(OLED_DC, 1);
+    ret = SPI_transfer(handle, &spiTransaction);
+    SETBIT(OLED_CS, 1);
+    if (!ret) {
+        System_printf("Unsuccessful SPI transfer");
+    }
+}
+static void writeOLED_indexRegister(uint8_t reg) {
+    uint8_t transmitBuf[1], ret;
+    transmitBuf[0] = reg;
+    SPI_Transaction spiTransaction;
+    spiTransaction.count = 1;
+    spiTransaction.txBuf = transmitBuf;
+    spiTransaction.rxBuf = NULL;
+    SETBIT(OLED_RW, 0); // Set the peripheral to write -> mcu write to periph
+    // Write to register
+    SETBIT(OLED_CS, 0);
+    SETBIT(OLED_DC, 0);
+    ret = SPI_transfer(handle, &spiTransaction);
+    SETBIT(OLED_CS, 1);
+    if (!ret) {
+        System_printf("Unsuccessful SPI transfer");
+    }
     SETBIT(OLED_CS, 1);
 }
 /*!
