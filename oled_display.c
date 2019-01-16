@@ -108,7 +108,7 @@ static void OLED_Fxn(void) {
             setChanged(false);
         }
         if (testcase == 0) {
-            putValueFromInput("128\0", "\3 Rate\0", "Stat: OK\0");
+            putValueFromInput("128\0", "\3Rate\0", "Stat: OK\0");
         } else if (testcase == 2) {
             if (isPrintableChar(c)) {
                 // here code for calculating cursor position and initialize the scrolling functionality.
@@ -240,8 +240,6 @@ static void deleteCharAtCurrentPoint() {
         currentPosition.y -= font.fontHeading; // jump 1 row back
         // set cursor at last position of this row
         currentPosition.x = OLED_DISPLAY_X_MAX - ((OLED_DISPLAY_X_MAX - LEFT_MARGIN) % font.fontSpacing) - (font.fontSpacing - font.fontWidth);
-        System_printf("current_x: %u\n", currentPosition.x);
-        System_flush();
         drawChar(0x20, &font, bgcol, bgcol, currentPosition);  // draw space without char feed
     } else {
         currentPosition.x -= font.fontSpacing; // Spacing is font width + extra space for the next char
@@ -295,7 +293,6 @@ static void scrollRow (point current) {
     }
     else
         isScrolling = false;
-    System_printf("cursor at x: %u, y: %u\n", currentPosition.x, currentPosition.y);
     toggleUpScroll(isScrolling);
 }
 // Close Doxygen group

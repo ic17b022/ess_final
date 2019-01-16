@@ -82,9 +82,8 @@ void UARTFxn(UArg arg0, UArg arg1)
         }
         // Keystroke in the valid region, send it to the oled_display.c
         if (input >= 0x08 && input <= 0x7F) {
-            // charContainer= input;
-            // Semaphore_post(sem);  // Semaphore get posted on each entered char
-            uartChar = input;
+            // inputChar is the shared memory in broker to wait for any input
+            inputChar = input;
             Semaphore_post(input_sem); // Semaphore get posted to broker
         }
         UART_write(uart, &input, 1); // Remove this line to stop echoing!

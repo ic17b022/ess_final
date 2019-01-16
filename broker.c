@@ -54,11 +54,11 @@ extern void Broker_task(void) {
     initializeSemaphore();
 
     while (1) {
-
+        // wait for input, no matter from where
         Semaphore_pend(input_sem, BIOS_WAIT_FOREVER);
         // Testcase 0 is normal mode input module get routed to output module
         if (getTestcase() == 0) {
-            convertDataToChar(uartChar, &oledChar);
+            convertDataToChar(inputChar, &oledChar);
         }
         // Testcase 1 is test input in which form whatsoever
         else if (getTestcase() == 1) {
@@ -67,7 +67,7 @@ extern void Broker_task(void) {
         }
         // Testcase 2 routes the UART to the output, User can write to OLED
         else if (getTestcase() == 2) {
-            oledChar = uartChar;
+            oledChar = inputChar;
         }
         //
         // post the semaphore for the OLED Task
