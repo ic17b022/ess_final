@@ -5,7 +5,7 @@
 */
 
 /*!
- * \addtogroup group_oled_ress
+ * \addtogroup group_oled_res
  *! @{
 */
 #ifndef RESOURCES_IMAGE_H_
