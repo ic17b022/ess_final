@@ -94,7 +94,6 @@ static void OLED_Fxn(void) {
         // sem_timeout = Semaphore_pend(sem, BIOS_WAIT_FOREVER);
         //        char c = charContainer;
         sem_timeout = Semaphore_pend(output_sem, BIOS_WAIT_FOREVER);
-        char c = oledChar;
         if (!sem_timeout) {
             System_printf("Semaphore has time out.\n");
             System_flush();
@@ -108,12 +107,13 @@ static void OLED_Fxn(void) {
             setChanged(false);
         }
         if (testcase == 0) {
-            putValueFromInput("128\0", "\3Rate\0", "Stat: OK\0");
+
+            putValueFromInput(oledChar, "\3Rate\0", "Stat: OK\0");
         } else if (testcase == 2) {
-            if (isPrintableChar(c)) {
+            if (isPrintableChar(oledChar[0])) {
                 // here code for calculating cursor position and initialize the scrolling functionality.
                 // scrollRow(currentPosition);
-                drawChar(c, &font, charCol, bgcol, currentPosition);
+                drawChar(oledChar[0], &font, charCol, bgcol, currentPosition);
                 currentPosition.x += font.fontSpacing; // Note text is drawing backwards
                 setCursor();
             }

@@ -183,12 +183,14 @@ void drawChar(char c, fontContainer *font, color24 fontColor, color24 bgColor, p
 /*
  * \brief shuts the OLED Display down
  */
-void OLED_power_off(void) {
+void OLED_toggle_Display_on_off(void) {
+    static bool display;
     // Set STANDBY_ON_OFF
     createBackgroundFromImage(cool_image);
     wait_ms(10000);           // wait 10  s
-    commandSPI(OLED_DISPLAY_ON_OFF, 0x00);  // Display OFF
+    commandSPI(OLED_DISPLAY_ON_OFF, display);  // Display OFF
     wait_ms(5);           // wait 5 ms
+    display ^= 1;         // toggle on off
 }
 
 static void adressEntireOLED(void) {
@@ -223,6 +225,8 @@ void createBackgroundFromColor(color24 rgbColor) {
  * \param screenimage image in bitmap format, supplied by a c-array
  */
 void createBackgroundFromImage(image screenimage) {
+    // adress the entire screen
+    adressEntireOLED();
     uint16_t i;
     // enable DDRAM for writing
     writeOLED_indexRegister(OLED_DDRAM_DATA_ACCESS_PORT);

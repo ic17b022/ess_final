@@ -58,6 +58,7 @@ extern void Broker_task(void) {
         Semaphore_pend(input_sem, BIOS_WAIT_FOREVER);
         // Testcase 0 is normal mode input module get routed to output module
         if (getTestcase() == 0) {
+            inputChar = 71;
             convertDataToChar(inputChar, &oledChar);
         }
         // Testcase 1 is test input in which form whatsoever
@@ -67,7 +68,12 @@ extern void Broker_task(void) {
         }
         // Testcase 2 routes the UART to the output, User can write to OLED
         else if (getTestcase() == 2) {
-            oledChar = inputChar;
+            oledChar[0] = inputChar;
+            oledChar[1] = '\0';
+        }
+        // Testcase 3 swich the oled off
+        else if (getTestcase() == 3) {
+            OLED_toggle_Display_on_off();
         }
         //
         // post the semaphore for the OLED Task
@@ -102,8 +108,11 @@ static void initializeSemaphore(void) {
  * \brief convert ingoing integer to char with equivalent ascii
  * \param inValue integer to be converted. Note max 3 digits get used (uint8_t)
  */
+
+// Compiler prints a waring because snprintf is not declared in c89 but in c99
+// see https://e2e.ti.com/support/tools/ccs/f/81/t/123841?tisearch=e2e-sitesearch&keymatch=snprintf%20header
 static void convertDataToChar(uint8_t inValue, char *outchar) {
-    uint8_t result = snprintf(outchar, 3, "%u", inValue);
+    uint8_t result = snprintf(outchar, 4, "%u\0", inValue);
     if (result == 0) {
         System_printf("Not written any pulse value.\n");
         System_flush();

@@ -70,6 +70,7 @@ void UARTFxn(UArg arg0, UArg arg1)
             case '0':
             case '1':
             case '2':
+            case '3':
                 testcase = followChar - '0';
                 isChanged = true;
                 System_printf("New Testcase: %u\n", testcase);
