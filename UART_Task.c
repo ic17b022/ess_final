@@ -17,13 +17,14 @@ static bool isChanged;
 
 // ---------------------------------------------------------------------------- functions ---
 static void outputMenu(void);
+
+// ----------------------------------------------------------------------- implementation ---
+
 /*!
  * \brief UART Task receives keystrokes from an attached Terminal via UART
  * The keystroke get tested, and if the comply with the valid chars the char get appended to
  * the global char buffer. And a semaphore get posted
  */
-
-// ----------------------------------------------------------------------- implementation ---
 void UARTFxn(UArg arg0, UArg arg1)
 {
     UART_Handle uart;
@@ -124,20 +125,38 @@ void setup_UART_Task(xdc_String name, uint8_t priority)
         System_abort("TaskUART create failed");
     }
 }
+/*!
+ * \brief print principal menu to screen
+ */
 static void outputMenu(void) {
     System_printf("Menu list:\n");
-    System_printf("\n#0 Heartrate (Input) In -> OLED C (Output) out\n");
-    System_printf("#1 Heartrate (Input) In -> UART out\n");
+    System_printf("\n#0 Heart rate (Input) In -> OLED C (Output) out\n");
+    System_printf("#1 Heart rate (Input) In -> UART out\n");
     System_printf("#2 UART In -> OLED C (Output) out\n");
+    System_printf("#3 Toggle OLED- Display on/ off\n");
     System_printf("Select needed by providing leading '#' before number.\n");
     System_flush();
 }
+/*!
+ * \brief get the actual testcase value
+ * 0 ... normal mode
+ * 1 ... testing input module
+ * 2 ... testing output module
+ * 3 ... display off/ on
+ */
 uint8_t getTestcase(void) {
     return testcase;
 }
-void setChanged(bool _isChanged) {
-    isChanged = _isChanged;
+/*!
+ * \brief reset the static variable isChanged from outside.
+ * Necessary because oled_display.c needs to reset the value
+ */
+void resetChanged(void) {
+    isChanged = false;
 }
+/*!
+ * \ get the actual value of the changing testcase status
+ */
 bool getChanged(void) {
     return isChanged;
 }

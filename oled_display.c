@@ -104,7 +104,7 @@ static void OLED_Fxn(void) {
         if (isChanged == true) {
             createBackgroundFromColor(bgcol);
             cursorUpperLeft();
-            setChanged(false);
+            resetChanged();
         }
         if (testcase == 0) {
 

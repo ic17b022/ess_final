@@ -25,7 +25,7 @@ char charContainer;
 // ---------------------------------------------------------------------------- functions ---
 extern uint8_t getTestcase();
 extern bool getChanged(void);
-extern void setChanged(bool _isChanged);
+extern void resetChanged(void);
 /*!
  *  \brief Execute UART Task
  *  \param arg0 void
