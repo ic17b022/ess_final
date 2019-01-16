@@ -76,7 +76,7 @@ extern void setup_OLED_task(xdc_String name, uint8_t priority) {
 static void OLED_Fxn(void) {
     // power on OLED
     OLED_power_on();
-    createBackgroundFromImage(cool_image);
+    createBackgroundFromImage(logo_image);
     Task_sleep(3000);
     fontsize = 1;
     bgcol = blueColor;
