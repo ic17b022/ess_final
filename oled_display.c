@@ -25,9 +25,9 @@
 // ------------------------------------------------------------------------------ globals ---
 //! \brief contains the actual position of the cursor in window
 static volatile point currentPosition;
-//! \brief wheter sreensaver scrolling is enabled or disabled
+//! \brief whether screen saver scrolling is enabled or disabled
 static volatile bool isScrolling;
-//! \brief used fontsize for next char (1-3)
+//! \brief used font size for next char (1-3)
 static volatile uint8_t fontsize;
 //! \brief used font needed for calculation purposes
 static fontContainer font;
@@ -101,7 +101,7 @@ static void OLED_Fxn(void) {
         }
         uint8_t testcase = getTestcase();
         bool isChanged = getChanged();
-        // if testcase change occcured, clear screen
+        // if test case change occurred, clear screen
         if (isChanged == true) {
             createBackgroundFromColor(bgcol);
             cursorUpperLeft();
@@ -129,9 +129,9 @@ static void setCursor(void) {
 }
 /*!
  * \brief output the incoming value in a formatted form.
- * \param inputChar value (given as 0-terminated c-String) heartrate
+ * \param inputChar value (given as 0-terminated c-String) heart rate
  * \param title header for the formatted output. (c-String 0-terminated)
- * \param status a fedback to the user about the status of the measurement (0-terminated)
+ * \param status a feedback to the user about the status of the measurement (0-terminated)
  */
 static void putValueFromInput(char *inputChar, char *title, char *status) {
     // draw header
@@ -280,12 +280,12 @@ static bool isPointPrelastRow (point current) {
 }
 /*!
  *  \brief enables/ disables the scroll functionality of the SEPS114A
- *  if heartrate display is activated, scrolling is alwasy disabled
+ *  if heart rate display is activated, scrolling is always disabled
  *  \param current the actual cursor position, get evaluated and if cursor is on prelast position
  *  begin to scroll
  */
 static void scrollRow (point current) {
-    // disable scrolling when displaying heartrate
+    // disable scrolling when displaying heart rate
     if (getTestcase() == 0) {
         toggleUpScroll(false);
         return;

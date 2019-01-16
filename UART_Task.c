@@ -54,6 +54,8 @@ void UARTFxn(UArg arg0, UArg arg1)
     if (sem == NULL) {
         System_abort("Error creating the Semaphore");
     }
+    // initialize Testcase with 0 i.e. 'Normal mode'
+    testcase = 0;
     outputMenu();
     /* Loop forever echoing */
     while (1) {
@@ -83,7 +85,7 @@ void UARTFxn(UArg arg0, UArg arg1)
             // charContainer= input;
             // Semaphore_post(sem);  // Semaphore get posted on each entered char
             uartChar = input;
-            Semaphore_post(uart_sem); // Semaphore get posted to broker
+            Semaphore_post(input_sem); // Semaphore get posted to broker
         }
         UART_write(uart, &input, 1); // Remove this line to stop echoing!
     }

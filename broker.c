@@ -54,13 +54,22 @@ extern void Broker_task(void) {
     initializeSemaphore();
 
     while (1) {
-        // receive char from UART task
-        Semaphore_pend(uart_sem, BIOS_WAIT_FOREVER);
-        System_printf("Char from UART: %c\n", uartChar);
-        System_flush();
-        // Convert input ...
 
-        oledChar = uartChar;
+        Semaphore_pend(input_sem, BIOS_WAIT_FOREVER);
+        // Testcase 0 is normal mode input module get routed to output module
+        if (getTestcase() == 0) {
+            convertDataToChar(uartChar, &oledChar);
+        }
+        // Testcase 1 is test input in which form whatsoever
+        else if (getTestcase() == 1) {
+            System_printf("Do the input test");
+            System_flush();
+        }
+        // Testcase 2 routes the UART to the output, User can write to OLED
+        else if (getTestcase() == 2) {
+            oledChar = uartChar;
+        }
+        //
         // post the semaphore for the OLED Task
         Semaphore_post(output_sem);
     }
@@ -80,11 +89,11 @@ static void initializeSemaphore(void) {
         System_printf("Failed creating output Semaphore\n");
         System_flush();
     }
-    Semaphore_Params uart_sem_parms;
-    Semaphore_Params_init(&uart_sem_parms);
+    Semaphore_Params input_sem_parms;
+    Semaphore_Params_init(&input_sem_parms);
 
-    uart_sem =  Semaphore_create(0, &uart_sem_parms, &er);
-    if (uart_sem == NULL) {
+    input_sem =  Semaphore_create(0, &input_sem_parms, &er);
+    if (input_sem == NULL) {
         System_printf("Failed creating output Semaphore\n");
         System_flush();
     }
@@ -94,7 +103,7 @@ static void initializeSemaphore(void) {
  * \param inValue integer to be converted. Note max 3 digits get used (uint8_t)
  */
 static void convertDataToChar(uint8_t inValue, char *outchar) {
-    uint8_t result = snprint(outchar, 3, "%u", inValue);
+    uint8_t result = snprintf(outchar, 3, "%u", inValue);
     if (result == 0) {
         System_printf("Not written any pulse value.\n");
         System_flush();
