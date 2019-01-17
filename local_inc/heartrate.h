@@ -8,6 +8,6 @@
 #ifndef LOCAL_INC_HEARTRATE_H_
 #define LOCAL_INC_HEARTRATE_H_
 
-void create_heartrate_task(int prio);
-
+void create_heartrate_tasks(int prio);
+void clockFunction();
 #endif /* LOCAL_INC_HEARTRATE_H_ */
