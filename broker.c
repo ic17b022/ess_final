@@ -75,6 +75,10 @@ extern void Broker_task(void) {
         else if (getTestcase() == 3) {
             OLED_toggle_Display_on_off();
         }
+        else if (getTestcase() == 4) {
+            System_printf("Draw diagram");
+            System_flush();
+        }
         //
         // post the semaphore for the OLED Task
         Semaphore_post(output_sem);

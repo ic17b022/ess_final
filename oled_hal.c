@@ -180,6 +180,43 @@ void drawChar(char c, fontContainer *font, color24 fontColor, color24 bgColor, p
         }
     }
 }
+/* \brief draw pixel in y axis to display
+ * used for building a diagram
+ * \param yValue height value normalized stored in a array, amount of values to be displayed, should be as many as x -pixels size
+ * \param diagcol the color of the diagram line in classic 24Bit RGB (no alpha channel)
+ * \param bgColor background color for the char, because no alpha channel is supported
+ */
+void drawPixelToYPosition(uint8_t *yValues, color24 diagcol, color24 bgColor) {
+    color16 lineCol = createColorPixelFromRGB(diagcol);
+    color16 backCol = createColorPixelFromRGB(bgColor);
+    uint8_t x, y;
+    // configure the windowsize
+    commandSPI(OLED_MEM_X1, 0x00);
+    commandSPI(OLED_MEM_X2, OLED_DISPLAY_X_MAX);
+    commandSPI(OLED_MEM_Y1, 0x00);
+    commandSPI(OLED_MEM_Y2, OLED_DISPLAY_Y_MAX);
+
+    // set origin lower left
+    commandSPI(OLED_DISPLAYSTART_X,0x00);
+    commandSPI(OLED_DISPLAYSTART_Y, 0x00);
+    // interpret from bottom to top
+    commandSPI(0x1D, 0b111);
+    //draw y axis
+    writeOLED_indexRegister(OLED_DDRAM_DATA_ACCESS_PORT);
+    for (x = 0;  x <= OLED_DISPLAY_X_MAX; x++)
+    {
+        for (y = 0; y <= OLED_DISPLAY_Y_MAX; y++) {
+            if (yValues[x] == y || yValues[x] == y+1) {
+                writeOLED_dataRegister(lineCol.upperByte);
+                writeOLED_dataRegister(lineCol.lowerByte);
+            } else {
+                writeOLED_dataRegister(backCol.upperByte);
+                writeOLED_dataRegister(backCol.lowerByte);
+            }
+        }
+    }
+}
+
 /*
  * \brief shuts the OLED Display down
  */

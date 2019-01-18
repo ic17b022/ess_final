@@ -117,6 +117,14 @@ static void OLED_Fxn(void) {
                 currentPosition.x += font.fontSpacing; // Note text is drawing backwards
                 setCursor();
             }
+            // inserting testing function for print diagram
+        } else if (testcase == 4) {
+            createBackgroundFromColor(bgcol);
+            uint8_t i;
+            uint8_t yCoordinates[96];
+            for (i = 0; i<96; i++)
+                yCoordinates[i] = i;
+            drawPixelToYPosition(yCoordinates, charCol, redColor);
         }
     }
 }

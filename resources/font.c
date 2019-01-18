@@ -34,7 +34,7 @@ void initializeFont(fontContainer *fc, uint8_t size) {
             fc->fontSpacing = 16;
             fc->fontHeading = 28;
             fc->charArrayLength = 52;
-            fc->font = font2;
+            fc->font = &font2[0];
             break;
             // Font Bitsize 3Byte 24x36
         case 2:
@@ -44,7 +44,7 @@ void initializeFont(fontContainer *fc, uint8_t size) {
             fc->fontSpacing = 25;
             fc->fontHeading = 38;
             fc->charArrayLength = 108;
-            fc->font = font3;
+            fc->font = &font3[0];
             break;
         default:
             System_abort("Illegal font size");

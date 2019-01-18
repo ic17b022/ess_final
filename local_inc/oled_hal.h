@@ -161,7 +161,8 @@ extern const color24 blueColor;
  * \param bgColor uint32_t, background color for the char, because no alpha channel is supported
  * \param origin point, the lower left corner of the char in the screen coordinates
  */
-void drawChar(char c, fontContainer *font, color24 fontColor, color24 bgColor, point origin);
+extern void drawChar(char c, fontContainer *font, color24 fontColor, color24 bgColor, point origin);
+extern void drawPixelToYPosition(uint8_t *yValues, color24 diagcol, color24 bgColor);
 extern void createBackgroundFromImage(image screenimage);
 extern void createBackgroundFromColor(color24 rgbColor);
 extern void OLED_power_on(void);
