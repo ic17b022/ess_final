@@ -20,6 +20,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
+#include <stdlib.h>
 
 /* XDCtools Header files */
 #include <xdc/std.h>
@@ -32,6 +33,7 @@
 #include <ti/sysbios/BIOS.h>
 #include <ti/sysbios/knl/Task.h>        // supplies the Task
 #include <ti/sysbios/knl/Semaphore.h>   // supplies the Semaphore
+#include <ti/sysbios/knl/Clock.h>       // supplies the clock
 
 /* Instrumentation headers */
 #include <ti/uia/runtime/LogSnapshot.h>

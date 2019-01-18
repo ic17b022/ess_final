@@ -19,8 +19,8 @@ int main(void)
     Board_initI2C();
     Board_initSPI();
 
-    //create I2C task
-    create_heartrate_task(15);
+    //create heartrate main task
+    create_heartrate_tasks(15);
 
     // init the SPI with the actual system clock
     initSPI(ui32SysClock);
