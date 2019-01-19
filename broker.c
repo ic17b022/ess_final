@@ -58,7 +58,7 @@ extern void Broker_task(void) {
         Semaphore_pend(input_sem, BIOS_WAIT_FOREVER);
         // Testcase 0 is normal mode input module get routed to output module
         if (getTestcase() == 0) {
-            inputChar = 71;
+//            inputChar = 71;
             convertDataToChar(inputChar, &oledChar);
         }
         // Testcase 1 is test input in which form whatsoever
@@ -116,7 +116,7 @@ static void initializeSemaphore(void) {
 // Compiler prints a waring because snprintf is not declared in c89 but in c99
 // see https://e2e.ti.com/support/tools/ccs/f/81/t/123841?tisearch=e2e-sitesearch&keymatch=snprintf%20header
 static void convertDataToChar(uint8_t inValue, char *outchar) {
-    uint8_t result = snprintf(outchar, 4, "%u\0", inValue);
+    uint8_t result = snprintf(outchar, 4, "%03u\0", inValue);
     if (result == 0) {
         System_printf("Not written any pulse value.\n");
         System_flush();

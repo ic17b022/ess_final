@@ -182,12 +182,12 @@ void drawChar(char c, fontContainer *font, color24 fontColor, color24 bgColor, p
 }
 /* \brief draw pixel in y axis to display
  * used for building a diagram
- * \param yValue height value normalized stored in a array, amount of values to be displayed, should be as many as x -pixels size
- * \param diagcol the color of the diagram line in classic 24Bit RGB (no alpha channel)
+ * \param yValue height value normalized stored in a array, amount of values to be displayed, should be as many as x -pixels size i.e. 96
+ * \param lineColor the color of the diagram line in classic 24Bit RGB (no alpha channel)
  * \param bgColor background color for the char, because no alpha channel is supported
  */
-void drawPixelToYPosition(uint8_t *yValues, color24 diagcol, color24 bgColor) {
-    color16 lineCol = createColorPixelFromRGB(diagcol);
+void drawPixelToYPosition(uint8_t *yValues, color24 lineColor, color24 bgColor) {
+    color16 lineCol = createColorPixelFromRGB(lineColor);
     color16 backCol = createColorPixelFromRGB(bgColor);
     uint8_t x, y;
     // configure the windowsize
