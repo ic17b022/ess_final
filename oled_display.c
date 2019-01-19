@@ -107,7 +107,6 @@ static void OLED_Fxn(void) {
             resetChanged();
         }
         if (testcase == 0) {
-
             putValueFromInput(oledChar, "\3Rate\0", "Stat: OK\0");
         } else if (testcase == 2) {
             if (isPrintableChar(oledChar[0])) {

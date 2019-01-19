@@ -257,10 +257,11 @@ void clockFunction(){
     memset(sensor_data, 0, sizeof(*sensor_data)*SENSOR_DATA_SIZE);
     data_count = 0;
 
-    heartrate = heartrate * 30; //extrapolate from 5 seconds to 1 Minute
+    heartrate = heartrate * 12; //extrapolate from 5 seconds to 1 Minute
 
-    System_printf("heartrate: %u", heartrate);
-    System_flush();
+    //send data to broker
+    inputChar = heartrate;
+    Semaphore_post(input_sem);
 }
 
 static int comparison(const void* a, const void* b){
