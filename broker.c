@@ -62,6 +62,9 @@ extern void Broker_task(void)
     {
         if(Mailbox_pend(brokerRead, &UART_read, 1))
         {
+            System_printf("gelesen: %c\n", UART_read);
+            System_flush();
+
             if (UART_read == '#')
             {
                 Mailbox_pend(brokerRead, &UART_read, BIOS_WAIT_FOREVER);
@@ -84,8 +87,6 @@ extern void Broker_task(void)
             }
         }
 
-        System_printf("gelesen: %c\n", UART_read);
-        System_flush();
         // Testcase 0 is normal mode input module get routed to output module
         if (testcase == 0)
         {
