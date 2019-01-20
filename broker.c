@@ -62,13 +62,14 @@ extern void Broker_task(void)
     {
         if(Mailbox_pend(brokerRead, &UART_read, 1))
         {
-            System_printf("gelesen: %c\n", UART_read);
+            System_printf("gelesen1: %c\n", UART_read);
             System_flush();
 
             if (UART_read == '#')
             {
                 Mailbox_pend(brokerRead, &UART_read, BIOS_WAIT_FOREVER);
-
+                System_printf("gelesen2: %c\n", UART_read);
+                System_flush();
                 if (UART_read >= '0' && UART_read <= '4')
                 {
                     testcase = UART_read - '0';
@@ -96,10 +97,13 @@ extern void Broker_task(void)
         // Testcase 1 is test input in which form whatsoever
         else if (testcase == 1)
         {
+            char heartrateString[4];
+
             Mailbox_pend(heartrateMailbox, &temp, BIOS_WAIT_FOREVER);
-            System_printf("printf: %u\n", temp);
-            System_flush();
-            Mailbox_post(brokerWrite, &temp, BIOS_NO_WAIT);
+            sprintf(heartrateString, "%03u", temp);
+            Mailbox_post(brokerWrite, &heartrateString[0], BIOS_WAIT_FOREVER);
+            Mailbox_post(brokerWrite, &heartrateString[1], BIOS_WAIT_FOREVER);
+            Mailbox_post(brokerWrite, &heartrateString[2], BIOS_WAIT_FOREVER);
         }
         else if (testcase == 4)
         {
