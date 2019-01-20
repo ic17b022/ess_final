@@ -19,22 +19,25 @@ int main(void)
     Board_initI2C();
     Board_initSPI();
 
-    //create heartrate main task
-    create_heartrate_tasks(15);
-
     // init the SPI with the actual system clock
     initSPI(ui32SysClock);
+    // Starting the UART Task: sending char and displaying
+    setup_UART_Task("UART Task", 5);
+    System_printf("Created Startup UART Task\n");
+    System_flush();
     // Starting the Broker Task: receiving char and displaying
     setup_Broker_task("Broker Task", 5);
     System_printf("Created Startup Broker Task\n");
-
+    System_flush();
     // Starting the OLED Task: receiving char and displaying
     setup_OLED_task("Startup_Oled", 5);
     System_printf("Created Startup Oled Task\n");
-    // Starting the UART Task: sending char and displaying
-    setup_UART_Task("UART Task", 10);
-    System_printf("Created Startup UART Task\n");
     System_flush();
+    //create heartrate main task
+    create_heartrate_tasks(5);
+    System_printf("Created startup Heartrate Task\n");
+    System_flush();
+
     /* Start BIOS */
     BIOS_start();
 }

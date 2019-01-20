@@ -6,7 +6,6 @@
  */
 #include "local_inc/common.h"
 #include "local_inc/heartrate.h"
-#include "local_inc/broker.h"
 
 #include <ti/drivers/I2C.h>
 
@@ -166,6 +165,7 @@ static void readFIFOData(){
     short samples;
     uint8_t buffer[4];
     int i;
+    unsigned short temp;
 
     read_ptr = I2C_read(0x04);
     write_ptr = I2C_read(0x02);
@@ -179,11 +179,14 @@ static void readFIFOData(){
 
     for (i = 0; i < samples; i++){
         I2C_readFIFO(buffer);
-        if(i<SENSOR_DATA_SIZE){
-            sensor_data[data_count] = (buffer[0] <<8) + buffer[1];
+        temp = (buffer[0] <<8) + buffer[1];
+        if (temp > 30000 && i<SENSOR_DATA_SIZE){ //if there are meaningful values and we still have space in the array
+            sensor_data[data_count] = temp;
             data_count++;
         }
     }
+
+    /* einzelne Werte mit value/max * 96 auf eine Kurve mit höhe 96 pixel bringen (und max 96 davon liefern wegen breite)? */
 }
 
 static void I2C_write(uint8_t reg, uint8_t value){
@@ -260,8 +263,7 @@ void clockFunction(){
     heartrate = heartrate * 12; //extrapolate from 5 seconds to 1 Minute
 
     //send data to broker
-    inputChar = heartrate;
-    Semaphore_post(input_sem);
+    Mailbox_post(heartrateMailbox, &heartrate, BIOS_NO_WAIT);
 }
 
 static int comparison(const void* a, const void* b){

@@ -7,16 +7,14 @@
 // ----------------------------------------------------------------------------- includes ---
 #include "local_inc/common.h"
 #include "local_inc/UART_Task.h"
-#include "local_inc/broker.h"
 //! \addtogroup group_comm
 //! @{
 // ------------------------------------------------------------------------------ globals ---
-//! \brief stores the test variante selected by menu
-static uint8_t testcase;
-static bool isChanged;
-
+Semaphore_Handle sem;
+uint8_t input;
 // ---------------------------------------------------------------------------- functions ---
 static void outputMenu(void);
+static void UARTreadCallback(UART_Handle, void *buf, size_t count);
 
 // ----------------------------------------------------------------------- implementation ---
 
@@ -27,6 +25,12 @@ static void outputMenu(void);
  */
 void UARTFxn(UArg arg0, UArg arg1)
 {
+    Error_Block er;
+    Semaphore_Params params;
+    Semaphore_Params_init(&params);
+
+    sem = Semaphore_create(0, &params, &er);
+
     UART_Handle uart;
     UART_Params uartParams;
     const char echoPrompt[] = "\fEchoing characters:\r\n";
@@ -36,8 +40,10 @@ void UARTFxn(UArg arg0, UArg arg1)
     uartParams.writeDataMode = UART_DATA_BINARY;
     uartParams.readDataMode = UART_DATA_BINARY;
     uartParams.readReturnMode = UART_RETURN_FULL;
-    uartParams.readEcho = UART_ECHO_OFF;
+    uartParams.readEcho = UART_ECHO_ON;
     uartParams.baudRate = 9600;
+    uartParams.readMode = UART_MODE_CALLBACK;
+    uartParams.readCallback = UARTreadCallback;
     uart = UART_open(Board_UART0, &uartParams);
 
     if (uart == NULL) {
@@ -46,50 +52,28 @@ void UARTFxn(UArg arg0, UArg arg1)
 
     UART_write(uart, echoPrompt, sizeof(echoPrompt));
 
-    Error_Block er;
-    Semaphore_Params params;
-    Semaphore_Params_init(&params);
-
-    // create a Semaphore for each individual char
-    sem = Semaphore_create(0, &params, &er);
-    if (sem == NULL) {
-        System_abort("Error creating the Semaphore");
-    }
-    // initialize Testcase with 0 i.e. 'Normal mode'
-    testcase = 0;
     outputMenu();
+
+    UART_read(uart, &input, 1);
     /* Loop forever echoing */
     while (1) {
-        char input, followChar;
-        UART_read(uart, &input, 1);
-        UART_write(uart, &input, 1); // Remove this line to stop echoing!
-        // if input is '#' menu is selected. use next char to determine which selection is taken
-        if (input == '#') {
-            UART_read(uart, &followChar, 1);
 
-            switch (followChar) {
-            case '0':
-            case '1':
-            case '2':
-            case '3':
-            case '4':
-                testcase = followChar - '0';
-                isChanged = true;
-                System_printf("New Testcase: %u\n", testcase);
-                System_flush();
-                break;
-            default:
-                // pipe the input to standard out
-                break;
+        if(Semaphore_pend(sem, 1))
+        {
+            // Keystroke in the valid region, send it to broker otherwise just ignore it
+            if (input >= 0x08 && input <= 0x7F) {
+                // inputChar is the shared memory in broker to wait for any input
+                Mailbox_post(brokerRead, &input, BIOS_WAIT_FOREVER);
+
             }
+
+            UART_read(uart, &input, 1);
         }
-        // Keystroke in the valid region, send it to the oled_display.c
-        if (input >= 0x08 && input <= 0x7F) {
-            // inputChar is the shared memory in broker to wait for any input
-            inputChar = input;
-            Semaphore_post(input_sem); // Semaphore get posted to broker
-        }
-        UART_write(uart, &input, 1); // Remove this line to stop echoing!
+
+
+
+        if(Mailbox_pend(brokerWrite, &UARTwrite, 1))
+            UART_write(uart, &UARTwrite, 1);
     }
 
 }
@@ -138,28 +122,17 @@ static void outputMenu(void) {
     System_printf("Select needed by providing leading '#' before number.\n");
     System_flush();
 }
-/*!
- * \brief get the actual testcase value
- * 0 ... normal mode
- * 1 ... testing input module
- * 2 ... testing output module
- * 3 ... display off/ on
- */
-uint8_t getTestcase(void) {
-    return testcase;
+
+void outputTestcaseChange(uint8_t testcase){
+    System_printf("New Testcase: %u\n", testcase);
+    System_flush();
 }
-/*!
- * \brief reset the static variable isChanged from outside.
- * Necessary because oled_display.c needs to reset the value
- */
-void resetChanged(void) {
-    isChanged = false;
+
+static void UARTreadCallback(UART_Handle uart, void *buf, size_t count){
+    input = *((uint8_t*) buf);
+
+    Semaphore_post(sem);
 }
-/*!
- * \ get the actual value of the changing testcase status
- */
-bool getChanged(void) {
-    return isChanged;
-}
+
 // End Doxygen group
 //! @}

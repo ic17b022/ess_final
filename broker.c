@@ -18,18 +18,19 @@
 
 //! \addtogroup group_comm
 //! @{
-
 // ---------------------------------------------------------------------------- functions ---
-static void initializeSemaphore(void);
-static void convertDataToChar(uint8_t inValue, char *outchar);
-
+static void initializeMailboxes(void);
+// ---------------------------------------------------------------------------- globals -----
+static uint8_t testcase;
+static bool isChanged;
 // ----------------------------------------------------------------------- implementation ---
 /*!
  * \brief create a new Broker Task and initialize it with the necessary parameters.
  * \param name xdc_String, identifying name of the task
  * \param priority uint8_t initial priority of the task (1-15) 15 is highest priority
  */
-extern void setup_Broker_task(xdc_String name, uint8_t priority) {
+extern void setup_Broker_task(xdc_String name, uint8_t priority)
+{
     Task_Params taskLedParams;
     Task_Handle taskLed;
     Error_Block eb;
@@ -39,9 +40,10 @@ extern void setup_Broker_task(xdc_String name, uint8_t priority) {
     taskLedParams.stackSize = 1024; /* stack in bytes */
     taskLedParams.priority = priority; /* 0-15 (15 is highest priority on default -> see RTOS Task configuration) */
 
-    taskLed = Task_create((Task_FuncPtr)Broker_task, &taskLedParams, &eb);
-    if (taskLed == NULL) {
-        System_abort("TaskLed create failed");
+    taskLed = Task_create((Task_FuncPtr) Broker_task, &taskLedParams, &eb);
+    if (taskLed == NULL)
+    {
+        System_abort("Brokertask create failed");
     }
 }
 /*!
@@ -50,77 +52,110 @@ extern void setup_Broker_task(xdc_String name, uint8_t priority) {
  * the input module converts the input to ascii format and sends it to the OLED function
  * to display.
  */
-extern void Broker_task(void) {
-    initializeSemaphore();
+extern void Broker_task(void)
+{
+    initializeMailboxes();
+    uint8_t UART_read;
+    uint8_t temp;
 
-    while (1) {
-        // wait for input, no matter from where
-        Semaphore_pend(input_sem, BIOS_WAIT_FOREVER);
+    while (1)
+    {
+        if(Mailbox_pend(brokerRead, &UART_read, 1))
+        {
+            if (UART_read == '#')
+            {
+                Mailbox_pend(brokerRead, &UART_read, BIOS_WAIT_FOREVER);
+
+                if (UART_read >= '0' && UART_read <= '4')
+                {
+                    testcase = UART_read - '0';
+                    isChanged = true;
+                    outputTestcaseChange(testcase);
+                }
+            } // Testcase 2 routes the UART to the output, User can write to OLED
+            else if (testcase == 2)
+            {
+                Mailbox_post(oledMailbox, &UART_read, BIOS_WAIT_FOREVER);
+            }
+            // Testcase 3 swich the oled off
+            else if (testcase == 3)
+            {
+                OLED_toggle_Display_on_off();
+            }
+        }
+
+        System_printf("gelesen: %c\n", UART_read);
+        System_flush();
         // Testcase 0 is normal mode input module get routed to output module
-        if (getTestcase() == 0) {
-//            inputChar = 71;
-            convertDataToChar(inputChar, &oledChar);
+        if (testcase == 0)
+        {
+            Mailbox_pend(heartrateMailbox, &temp, BIOS_WAIT_FOREVER);
+            Mailbox_post(oledMailbox, &temp, BIOS_NO_WAIT);
         }
         // Testcase 1 is test input in which form whatsoever
-        else if (getTestcase() == 1) {
-            System_printf("Do the input test");
+        else if (testcase == 1)
+        {
+            Mailbox_pend(heartrateMailbox, &temp, BIOS_WAIT_FOREVER);
+            System_printf("printf: %u\n", temp);
             System_flush();
+            Mailbox_post(brokerWrite, &temp, BIOS_NO_WAIT);
         }
-        // Testcase 2 routes the UART to the output, User can write to OLED
-        else if (getTestcase() == 2) {
-            oledChar[0] = inputChar;
-            oledChar[1] = '\0';
-        }
-        // Testcase 3 swich the oled off
-        else if (getTestcase() == 3) {
-            OLED_toggle_Display_on_off();
-        }
-        else if (getTestcase() == 4) {
+        else if (testcase == 4)
+        {
             System_printf("Draw diagram");
             System_flush();
         }
-        //
-        // post the semaphore for the OLED Task
-        Semaphore_post(output_sem);
     }
 }
+
 /*!
- * \brief initialize both used semaphores
- * output_sem sempahore used to synchronize between broker and oled module
- * uart_sem semaphore used to synchronize between broker and uart
+ * \brief initialize all used mailboxes
+ *
+ *
  */
-static void initializeSemaphore(void) {
-    Error_Block er;
-    Semaphore_Params output_sem_parms;
-    Semaphore_Params_init(&output_sem_parms);
+static void initializeMailboxes(void){
+    Mailbox_Params params;
+    Error_Block eb;
 
-    output_sem = Semaphore_create(0, &output_sem_parms, &er);
-    if (output_sem == NULL) {
-        System_printf("Failed creating output Semaphore\n");
-        System_flush();
-    }
-    Semaphore_Params input_sem_parms;
-    Semaphore_Params_init(&input_sem_parms);
+    Mailbox_Params_init(&params);
+    Error_init(&eb);
 
-    input_sem =  Semaphore_create(0, &input_sem_parms, &er);
-    if (input_sem == NULL) {
-        System_printf("Failed creating output Semaphore\n");
-        System_flush();
-    }
+    heartrateMailbox = Mailbox_create(sizeof(uint8_t), 1, &params, &eb);
+    oledMailbox = Mailbox_create(sizeof(uint8_t), 1, &params, &eb);
+    brokerWrite = Mailbox_create(sizeof(uint8_t), 1, &params, &eb);
+    brokerRead = Mailbox_create(sizeof(uint8_t), 1, &params, &eb);
 }
+
 /*!
  * \brief convert ingoing integer to char with equivalent ascii
  * \param inValue integer to be converted. Note max 3 digits get used (uint8_t)
  */
 
-// Compiler prints a waring because snprintf is not declared in c89 but in c99
-// see https://e2e.ti.com/support/tools/ccs/f/81/t/123841?tisearch=e2e-sitesearch&keymatch=snprintf%20header
-static void convertDataToChar(uint8_t inValue, char *outchar) {
-    uint8_t result = snprintf(outchar, 4, "%03u\0", inValue);
-    if (result == 0) {
-        System_printf("Not written any pulse value.\n");
-        System_flush();
-    }
+/*!
+ * \brief get the actual testcase value
+ * 0 ... normal mode
+ * 1 ... testing input module
+ * 2 ... testing output module
+ * 3 ... display off/ on
+ */
+uint8_t getTestcase(void)
+{
+    return testcase;
+}
+/*!
+ * \brief reset the static variable isChanged from outside.
+ * Necessary because oled_display.c needs to reset the value
+ */
+void resetChanged(void)
+{
+    isChanged = false;
+}
+/*!
+ * \ get the actual value of the changing testcase status
+ */
+bool getChanged(void)
+{
+    return isChanged;
 }
 
 //! @}

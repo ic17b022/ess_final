@@ -33,6 +33,7 @@
 #include <ti/sysbios/BIOS.h>
 #include <ti/sysbios/knl/Task.h>        // supplies the Task
 #include <ti/sysbios/knl/Semaphore.h>   // supplies the Semaphore
+#include <ti/sysbios/knl/Mailbox.h>     // supplies the Mailbox
 #include <ti/sysbios/knl/Clock.h>       // supplies the clock
 
 /* Instrumentation headers */
@@ -54,5 +55,8 @@
 /* Board Header files */
 #include <Board.h>
 #include <EK_TM4C1294XL.h>
+
+/* local includes */
+#include "broker.h"
 
 #endif /* COMMON_H_ */

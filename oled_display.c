@@ -8,7 +8,6 @@
 #include "local_inc/oled_display.h"
 #include "local_inc/UART_Task.h"
 #include "local_inc/oled_hal.h"
-#include "local_inc/broker.h"
 
 
 //! \addtogroup group_oled_app
@@ -33,7 +32,7 @@ static volatile uint8_t fontsize;
 static fontContainer font;
 static color24 charCol;
 static color24 bgcol;
-
+static char oledChar[4];
 // ---------------------------------------------------------------------------- functions ---
 static void OLED_Fxn(void);
 static void putValueFromInput(char *inputChar, char *title, char *status);
@@ -46,6 +45,7 @@ static void deleteCharAtCurrentPoint();
 static bool isPointUpperLeft(point current);
 static bool isPointPrelastRow (point current);
 static void scrollRow (point current);
+static void convertDataToChar(uint8_t inValue, char *outchar);
 
 // ----------------------------------------------------------------------- implementation ---
 /*!
@@ -93,11 +93,8 @@ static void OLED_Fxn(void) {
         scrollRow(currentPosition);
         // sem_timeout = Semaphore_pend(sem, BIOS_WAIT_FOREVER);
         //        char c = charContainer;
-        sem_timeout = Semaphore_pend(output_sem, BIOS_WAIT_FOREVER);
-        if (!sem_timeout) {
-            System_printf("Semaphore has time out.\n");
-            System_flush();
-        }
+        Mailbox_pend(oledMailbox, &pulse, BIOS_WAIT_FOREVER);
+
         uint8_t testcase = getTestcase();
         bool isChanged = getChanged();
         // if test case change occurred, clear screen
@@ -107,12 +104,13 @@ static void OLED_Fxn(void) {
             resetChanged();
         }
         if (testcase == 0) {
+            convertDataToChar(pulse, &oledChar[0]);
             putValueFromInput(oledChar, "\3Rate\0", "Stat: OK\0");
         } else if (testcase == 2) {
-            if (isPrintableChar(oledChar[0])) {
+            if (isPrintableChar(pulse)) {
                 // here code for calculating cursor position and initialize the scrolling functionality.
                 // scrollRow(currentPosition);
-                drawChar(oledChar[0], &font, charCol, bgcol, currentPosition);
+                drawChar(pulse, &font, charCol, bgcol, currentPosition);
                 currentPosition.x += font.fontSpacing; // Note text is drawing backwards
                 setCursor();
             }
@@ -301,6 +299,16 @@ static void scrollRow (point current) {
     else
         isScrolling = false;
     toggleUpScroll(isScrolling);
+}
+
+// Compiler prints a waring because snprintf is not declared in c89 but in c99
+// see https://e2e.ti.com/support/tools/ccs/f/81/t/123841?tisearch=e2e-sitesearch&keymatch=snprintf%20header
+static void convertDataToChar(uint8_t inValue, char *outchar) {
+    uint8_t result = snprintf(outchar, 4, "%03u\0", inValue);
+    if (result == 0) {
+        System_printf("Not written any pulse value.\n");
+        System_flush();
+    }
 }
 // Close Doxygen group
 //! @}
