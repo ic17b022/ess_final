@@ -25,6 +25,7 @@ static void UARTreadCallback(UART_Handle, void *buf, size_t count);
  */
 void UARTFxn(UArg arg0, UArg arg1)
 {
+    char UARTwrite[3];
     Error_Block er;
     Semaphore_Params params;
     Semaphore_Params_init(&params);
@@ -40,7 +41,7 @@ void UARTFxn(UArg arg0, UArg arg1)
     uartParams.writeDataMode = UART_DATA_BINARY;
     uartParams.readDataMode = UART_DATA_BINARY;
     uartParams.readReturnMode = UART_RETURN_FULL;
-    uartParams.readEcho = UART_ECHO_ON;
+    uartParams.readEcho = UART_ECHO_OFF;
     uartParams.baudRate = 9600;
     uartParams.readMode = UART_MODE_CALLBACK;
     uartParams.readCallback = UARTreadCallback;
@@ -72,8 +73,10 @@ void UARTFxn(UArg arg0, UArg arg1)
 
 
 
-        if(Mailbox_pend(brokerWrite, &UARTwrite, 1))
-            UART_write(uart, &UARTwrite, 1);
+        if(Mailbox_pend(brokerWrite, UARTwrite, BIOS_NO_WAIT))
+            UART_write(uart, UARTwrite, 4);
+
+        Task_yield();
     }
 
 }

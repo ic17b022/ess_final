@@ -60,7 +60,7 @@ extern void Broker_task(void)
 
     while (1)
     {
-        if(Mailbox_pend(brokerRead, &UART_read, 1))
+        if (Mailbox_pend(brokerRead, &UART_read, BIOS_NO_WAIT))
         {
             System_printf("gelesen1: %c\n", UART_read);
             System_flush();
@@ -100,16 +100,15 @@ extern void Broker_task(void)
             char heartrateString[4];
 
             Mailbox_pend(heartrateMailbox, &temp, BIOS_WAIT_FOREVER);
-            sprintf(heartrateString, "%03u", temp);
-            Mailbox_post(brokerWrite, &heartrateString[0], BIOS_WAIT_FOREVER);
-            Mailbox_post(brokerWrite, &heartrateString[1], BIOS_WAIT_FOREVER);
-            Mailbox_post(brokerWrite, &heartrateString[2], BIOS_WAIT_FOREVER);
+            sprintf(heartrateString, "%03u ", temp);
+            Mailbox_post(brokerWrite, heartrateString, BIOS_WAIT_FOREVER);
         }
         else if (testcase == 4)
         {
             System_printf("Draw diagram");
             System_flush();
         }
+        Task_yield();
     }
 }
 
@@ -118,17 +117,18 @@ extern void Broker_task(void)
  *
  *
  */
-static void initializeMailboxes(void){
+static void initializeMailboxes(void)
+{
     Mailbox_Params params;
     Error_Block eb;
 
     Mailbox_Params_init(&params);
     Error_init(&eb);
 
-    heartrateMailbox = Mailbox_create(sizeof(uint8_t), 1, &params, &eb);
-    oledMailbox = Mailbox_create(sizeof(uint8_t), 1, &params, &eb);
-    brokerWrite = Mailbox_create(sizeof(uint8_t), 1, &params, &eb);
-    brokerRead = Mailbox_create(sizeof(uint8_t), 1, &params, &eb);
+    heartrateMailbox = Mailbox_create(sizeof(uint8_t), 5, &params, &eb);
+    oledMailbox = Mailbox_create(sizeof(uint8_t), 5, &params, &eb);
+    brokerWrite = Mailbox_create(sizeof(char) * 4, 5, &params, &eb);
+    brokerRead = Mailbox_create(sizeof(uint8_t), 5, &params, &eb);
 }
 
 /*!

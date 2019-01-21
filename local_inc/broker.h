@@ -25,14 +25,6 @@ Mailbox_Handle oledMailbox;
 Mailbox_Handle brokerWrite;
 //! \brief semaphore for reading from UART to broker
 Mailbox_Handle brokerRead;
-//! \brief Byte for UART to write to broker
-uint8_t UARTread;
-//! \brief Byte for UART to read from broker
-uint8_t UARTwrite;
-//! \brief Byte for heartrate to write to broker
-uint8_t heartrateBroker;
-//! \brief shared memory pulse comes from heart rate module
-uint8_t pulse;
 
 // ---------------------------------------------------------------------------- functions ---
 extern void setup_Broker_task(xdc_String name, uint8_t priority);

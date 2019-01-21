@@ -7,6 +7,9 @@
 #include "local_inc/common.h"
 #include "local_inc/heartrate.h"
 
+#include <ti/sysbios/hal/Hwi.h>
+#include <inc/hw_ints.h>
+#include <driverlib/sysctl.h>
 #include <ti/drivers/I2C.h>
 
 #define SLAVEADDR_READ 0b10101111
@@ -22,11 +25,14 @@ static void I2C_write(uint8_t reg, uint8_t value);
 static uint8_t I2C_read(uint8_t reg);
 static void I2C_readFIFO(uint8_t* array);
 static int comparison(const void* a, const void* b);
+//static void initInterrupt();
+//static void interruptFunction();
 
 I2C_Handle handle;
 
 unsigned short sensor_data[SENSOR_DATA_SIZE];
 unsigned short data_count;
+bool inter = false;
 
 void create_heartrate_tasks(int prio)
 {
@@ -38,11 +44,13 @@ void create_heartrate_tasks(int prio)
     Task_Params_init(&params);
     params.stackSize = 512; /* stack in bytes */
     params.priority = prio; /* 0-15 (15 is highest priority on default -> see RTOS Task configuration) */
+    params.instance->name = "heartrate";
 
     taskHeartrate = Task_create(heartrate_run, &params, &eb);
     if (taskHeartrate == NULL)
         System_abort("TaskLed create failed");
-    else{
+    else
+    {
         System_printf("Created heartrate main Task\n");
         System_flush();
     }
@@ -59,7 +67,8 @@ void create_heartrate_tasks(int prio)
     myClock = Clock_create(clockFunction, FREQUENCY, &clockParams, &eb); //Frequency is passed into create_clock to configure ticks waited until first invoke, and clockparams.period for every invoke after that
     if (myClock == NULL)
         System_abort("Clock create failed");
-    else{
+    else
+    {
         System_printf("Created Clock Task\n");
         System_flush();
     }
@@ -80,11 +89,19 @@ static void heartrate_run()
         System_abort("I2C was not opened");
     }
 
+    //initInterrupt();
     //since the power on interrupt is a lie we initialize here.
     init();
 
     while (1)       //GPIO INt pin suchen anschauen implementieren
     {
+//        if (inter)
+//        {
+//            System_printf("Interrupt received! \n");
+//            System_flush();
+//            inter = false;
+//        }
+
         //read interrupt register
         readBuffer = I2C_read(0x00);
 
@@ -134,7 +151,7 @@ static void heartrate_run()
 static void init()
 {
     /* prepare sensor data buffer */
-    memset(sensor_data, 0, sizeof(*sensor_data)*SENSOR_DATA_SIZE);
+    memset(sensor_data, 0, sizeof(*sensor_data) * SENSOR_DATA_SIZE);
     data_count = 0;
 
     //set mode to 010 in mode configuration register for heartrate only
@@ -159,7 +176,8 @@ static void init()
     I2C_write(0x01, 0b00100000);
 }
 
-static void readFIFOData(){
+static void readFIFOData()
+{
     uint8_t read_ptr;
     uint8_t write_ptr;
     short samples;
@@ -172,15 +190,17 @@ static void readFIFOData(){
 
     samples = write_ptr - read_ptr;
 
-    if(samples < 0)
+    if (samples < 0)
         samples = 0x0f - read_ptr + write_ptr;
-    else if (samples == 0)  //when the buffer is full read and write pointer point to the same address and since we got an interrupt there has to be data
+    else if (samples == 0) //when the buffer is full read and write pointer point to the same address and since we got an interrupt there has to be data
         samples = 16;
 
-    for (i = 0; i < samples; i++){
+    for (i = 0; i < samples; i++)
+    {
         I2C_readFIFO(buffer);
-        temp = (buffer[0] <<8) + buffer[1];
-        if (temp > 30000 && i<SENSOR_DATA_SIZE){ //if there are meaningful values and we still have space in the array
+        temp = (buffer[0] << 8) + buffer[1];
+        if (temp > 30000 && i < SENSOR_DATA_SIZE)
+        { //if there are meaningful values and we still have space in the array
             sensor_data[data_count] = temp;
             data_count++;
         }
@@ -189,7 +209,8 @@ static void readFIFOData(){
     /* einzelne Werte mit value/max * 96 auf eine Kurve mit höhe 96 pixel bringen (und max 96 davon liefern wegen breite)? */
 }
 
-static void I2C_write(uint8_t reg, uint8_t value){
+static void I2C_write(uint8_t reg, uint8_t value)
+{
     I2C_Transaction i2c;
     uint8_t writeBuffer[2];
 
@@ -208,7 +229,8 @@ static void I2C_write(uint8_t reg, uint8_t value){
     }
 }
 
-static uint8_t I2C_read(uint8_t reg){
+static uint8_t I2C_read(uint8_t reg)
+{
     I2C_Transaction i2c;
     uint8_t readBuffer = 0;
 
@@ -226,7 +248,8 @@ static uint8_t I2C_read(uint8_t reg){
     return readBuffer;
 }
 
-static void I2C_readFIFO(uint8_t* array){
+static void I2C_readFIFO(uint8_t* array)
+{
     I2C_Transaction i2c;
     uint8_t reg = 0x05;
 
@@ -242,22 +265,24 @@ static void I2C_readFIFO(uint8_t* array){
     }
 }
 
-void clockFunction(){
+void clockFunction()
+{
     unsigned short median;
     unsigned short temp_data[SENSOR_DATA_SIZE];
-    memcpy(temp_data, sensor_data, sizeof(*sensor_data)*data_count);
+    memcpy(temp_data, sensor_data, sizeof(*sensor_data) * data_count);
     int i;
     uint8_t heartrate = 0;
 
     qsort(temp_data, data_count, sizeof(*sensor_data), comparison);
-    median = temp_data[data_count/2]; //yes, dividing data_count by two rounds down in case of uneven amounts of data. I don't care.
+    median = temp_data[data_count / 2]; //yes, dividing data_count by two rounds down in case of uneven amounts of data. I don't care.
 
-    for (i = 0; i < data_count; i = i+2) {
-        if (sensor_data[i] <= median && sensor_data[i+1] >= median)
+    for (i = 0; i < data_count; i = i + 2)
+    {
+        if (sensor_data[i] <= median && sensor_data[i + 1] >= median)
             heartrate++;
     }
 
-    memset(sensor_data, 0, sizeof(*sensor_data)*SENSOR_DATA_SIZE);
+    memset(sensor_data, 0, sizeof(*sensor_data) * SENSOR_DATA_SIZE);
     data_count = 0;
 
     heartrate = heartrate * 12; //extrapolate from 5 seconds to 1 Minute
@@ -266,6 +291,42 @@ void clockFunction(){
     Mailbox_post(heartrateMailbox, &heartrate, BIOS_NO_WAIT);
 }
 
-static int comparison(const void* a, const void* b){
-    return ( *(unsigned short*)a - *(unsigned short*)b );
+static int comparison(const void* a, const void* b)
+{
+    return (*(unsigned short*) a - *(unsigned short*) b);
 }
+
+//static void initInterrupt()
+//{
+//    uint32_t ui32Strength;
+//    uint32_t ui32PinType;
+//
+//    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOD);
+//
+//    GPIOPinTypeGPIOInput(GPIO_PORTD_BASE, GPIO_PIN_4);
+//
+//    GPIOPadConfigGet(GPIO_PORTD_BASE, GPIO_PIN_4, &ui32Strength, &ui32PinType);
+//    GPIOPadConfigSet(GPIO_PORTD_BASE, GPIO_PIN_4, ui32Strength, GPIO_PIN_TYPE_STD_WPU);
+//
+//    //heartrate_click pull pin low -> register falling edge
+//    GPIOIntTypeSet(GPIO_PORTD_BASE, GPIO_PIN_4, GPIO_FALLING_EDGE);
+//
+//    //GPIOIntRegister(GPIO_PORTD_BASE, interruptFunction);
+//
+//    GPIOIntEnable(GPIO_PORTD_BASE, GPIO_PIN_4);
+//
+//    Hwi_Handle hwi0;
+//    Hwi_Params hwiParams;
+//    Hwi_Params_init(&hwiParams);
+//    hwiParams.arg = 2;
+//    hwiParams.enableInt = TRUE;
+//    hwi0 = Hwi_create(INT_GPIOD, interruptFunction, &hwiParams, NULL);
+//    if (hwi0 == NULL) {
+//      System_abort("Hwi create failed");
+//    }
+//}
+//
+//static void interruptFunction()
+//{
+//    inter = true;
+//}
