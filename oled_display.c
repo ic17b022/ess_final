@@ -82,7 +82,6 @@ static void OLED_Fxn(void) {
     bgcol = blueColor;
     charCol = whiteColor;
     createBackgroundFromColor(bgcol);
-    bool sem_timeout;
     uint8_t pulse;
 
     initializeFont(&font, fontsize);
