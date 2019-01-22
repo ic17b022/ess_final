@@ -24,7 +24,7 @@ void initializeFont(fontContainer *fc, uint8_t size) {
             fc->fontSpacing = 10;
             fc->fontHeading = 16;
             fc->charArrayLength = 14;
-            fc->font = font1;
+            fc->font = &font1[0];
             break;
             //Font Bitsize 12Byte 14x26
         case 1:

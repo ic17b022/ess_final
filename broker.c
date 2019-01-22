@@ -65,51 +65,51 @@ extern void Broker_task(void)
             System_printf("gelesen1: %c\n", UART_read);
             System_flush();
 
-        if (UART_read == '#')
-        {
-            Mailbox_pend(brokerRead, &UART_read, BIOS_WAIT_FOREVER);
-            System_printf("gelesen2: %c\n", UART_read);
-            System_flush();
-            if (UART_read >= '0' && UART_read <= '4')
+            if (UART_read == '#')
             {
-                testcase = UART_read - '0';
-                isChanged = true;
-                outputTestcaseChange(testcase);
-            }
-            // Testcase 3 swich the oled off
-            if (testcase == 3)
+                Mailbox_pend(brokerRead, &UART_read, BIOS_WAIT_FOREVER);
+                System_printf("gelesen2: %c\n", UART_read);
+                System_flush();
+                if (UART_read >= '0' && UART_read <= '4')
+                {
+                    testcase = UART_read - '0';
+                    isChanged = true;
+                    outputTestcaseChange(testcase);
+                }
+                // Testcase 3 swich the oled off
+                if (testcase == 3)
+                {
+                    OLED_toggle_Display_on_off();
+                }
+            } // Testcase 2 routes the UART to the output, User can write to OLED
+            else if (testcase == 2)
             {
-                OLED_toggle_Display_on_off();
+                Mailbox_post(oledMailbox, &UART_read, BIOS_WAIT_FOREVER);
             }
-        } // Testcase 2 routes the UART to the output, User can write to OLED
-        else if (testcase == 2)
-        {
-            Mailbox_post(oledMailbox, &UART_read, BIOS_WAIT_FOREVER);
         }
-    }
 
-    // Testcase 0 is normal mode input module get routed to output module
-    if (testcase == 0)
-    {
-        Mailbox_pend(heartrateMailbox, &temp, BIOS_WAIT_FOREVER);
-        Mailbox_post(oledMailbox, &temp, BIOS_NO_WAIT);
-    }
-    // Testcase 1 is test input in which form whatsoever
-    else if (testcase == 1)
-    {
-        char heartrateString[4];
+        // Testcase 0 is normal mode input module get routed to output module
+        if (testcase == 0)
+        {
+            Mailbox_pend(heartrateMailbox, &temp, BIOS_WAIT_FOREVER);
+            Mailbox_post(oledMailbox, &temp, BIOS_NO_WAIT);
+        }
+        // Testcase 1 is test input in which form whatsoever
+        else if (testcase == 1)
+        {
+            char heartrateString[4];
 
-        Mailbox_pend(heartrateMailbox, &temp, BIOS_WAIT_FOREVER);
-        sprintf(heartrateString, "%03u ", temp);
-        Mailbox_post(brokerWrite, heartrateString, BIOS_WAIT_FOREVER);
+            Mailbox_pend(heartrateMailbox, &temp, BIOS_WAIT_FOREVER);
+            sprintf(heartrateString, "%03u ", temp);
+            Mailbox_post(brokerWrite, heartrateString, BIOS_WAIT_FOREVER);
+        }
+//        else if (testcase == 4)
+//        {
+//            // post dummy char to give up processor time
+//            Mailbox_post(oledMailbox, &temp, BIOS_WAIT_FOREVER);
+//        }
+        Task_yield();
     }
-    else if (testcase == 4)
-    {
-        System_printf("Draw diagram");
-        System_flush();
-    }
-    Task_yield();
-}
 }
 
 /*!
@@ -119,16 +119,16 @@ extern void Broker_task(void)
  */
 static void initializeMailboxes(void)
 {
-Mailbox_Params params;
-Error_Block eb;
+    Mailbox_Params params;
+    Error_Block eb;
 
-Mailbox_Params_init(&params);
-Error_init(&eb);
+    Mailbox_Params_init(&params);
+    Error_init(&eb);
 
-heartrateMailbox = Mailbox_create(sizeof(uint8_t), 5, &params, &eb);
-oledMailbox = Mailbox_create(sizeof(uint8_t), 5, &params, &eb);
-brokerWrite = Mailbox_create(sizeof(char) * 4, 5, &params, &eb);
-brokerRead = Mailbox_create(sizeof(uint8_t), 5, &params, &eb);
+    heartrateMailbox = Mailbox_create(sizeof(uint8_t), 5, &params, &eb);
+    oledMailbox = Mailbox_create(sizeof(uint8_t), 5, &params, &eb);
+    brokerWrite = Mailbox_create(sizeof(char) * 4, 5, &params, &eb);
+    brokerRead = Mailbox_create(sizeof(uint8_t), 5, &params, &eb);
 }
 
 /*!
@@ -145,7 +145,7 @@ brokerRead = Mailbox_create(sizeof(uint8_t), 5, &params, &eb);
  */
 uint8_t getTestcase(void)
 {
-return testcase;
+    return testcase;
 }
 /*!
  * \brief reset the static variable isChanged from outside.
@@ -153,14 +153,14 @@ return testcase;
  */
 void resetChanged(void)
 {
-isChanged = false;
+    isChanged = false;
 }
 /*!
  * \ get the actual value of the changing testcase status
  */
 bool getChanged(void)
 {
-return isChanged;
+    return isChanged;
 }
 
 //! @}

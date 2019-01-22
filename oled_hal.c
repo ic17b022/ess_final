@@ -25,9 +25,9 @@ static const PinAddress OLED_RW = {OLED_RW_PORT, OLED_RW_PIN};
 //! \brief Constant Addresses of the boards LED01
 static const PinAddress LED01  = {LED_01_PORT, LED_01_PIN};
 //! \brief Constant Addresses of the boards LED02
-static const PinAddress LED02  = {LED_02_PORT, LED_02_PIN};
+// static const PinAddress LED02  = {LED_02_PORT, LED_02_PIN};  // Commented out, because is never in use, but maybe some time could be useful
 //! \brief Constant Addresses of the boards LED03
-static const PinAddress LED03  = {LED_03_PORT, LED_03_PIN};
+// static const PinAddress LED03  = {LED_03_PORT, LED_03_PIN};  // Commented out, because is never in use, but maybe some time could be useful
 //! \brief Constant Addresses of the boards LED04
 static const PinAddress LED04  = {LED_04_PORT, LED_04_PIN};
 
@@ -302,30 +302,6 @@ void toggleUpScroll(bool enable) {
     SETBIT(LED04, enable);
 }
 
-/*!
- * \brief write to the OLEDs Controller Index register.
- * \param reg index of the requested register
- */
-static void writeOLED_indexRegister_Tiva(uint8_t reg) {
-    SETBIT(OLED_RW, 0); // Set the peripheral to write -> mcu write to periph
-    // Write to register
-    SETBIT(OLED_CS, 0);
-    SETBIT(OLED_DC, 0);
-    SSIDataPut(OLED_SSI_BASE, reg);
-    while(SSIBusy(OLED_SSI_BASE));
-    SETBIT(OLED_CS, 1);
-}
-/*!
- * \brief write to the OLEDs Controller data register.
- * \param reg value for the selected register
- */
-static void writeOLED_dataRegister_Tiva(uint8_t data) {
-    SETBIT(OLED_CS, 0);
-    SETBIT(OLED_DC, 1);
-    SSIDataPut(OLED_SSI_BASE, data);
-    while(SSIBusy(OLED_SSI_BASE));
-    SETBIT(OLED_CS, 1);
-}
 static void writeOLED_dataRegister(uint8_t data) {
     uint8_t transmitBuf[1], ret;
     transmitBuf[0] = data;
