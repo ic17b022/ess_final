@@ -11,6 +11,7 @@
 #include <inc/hw_ints.h>
 #include <driverlib/sysctl.h>
 #include <ti/drivers/I2C.h>
+#include <ti/drivers/GPIO.h>
 
 #define SLAVEADDR_READ 0b10101111
 #define SLAVEADDR_WRITE 0b10101110
@@ -25,14 +26,14 @@ static void I2C_write(uint8_t reg, uint8_t value);
 static uint8_t I2C_read(uint8_t reg);
 static void I2C_readFIFO(uint8_t* array);
 static int comparison(const void* a, const void* b);
-//static void initInterrupt();
-//static void interruptFunction();
+static void initInterrupt();
+static void interruptFunction(unsigned int index);
 
 I2C_Handle handle;
+Semaphore_Handle interruptSem;
 
 unsigned short sensor_data[SENSOR_DATA_SIZE];
 unsigned short data_count;
-bool inter = false;
 
 void create_heartrate_tasks(int prio)
 {
@@ -42,7 +43,7 @@ void create_heartrate_tasks(int prio)
     /* Create heartrate task */
     Error_init(&eb);
     Task_Params_init(&params);
-    params.stackSize = 512; /* stack in bytes */
+    params.stackSize = 1024; /* stack in bytes */
     params.priority = prio; /* 0-15 (15 is highest priority on default -> see RTOS Task configuration) */
     params.instance->name = "heartrate";
 
@@ -89,39 +90,40 @@ static void heartrate_run()
         System_abort("I2C was not opened");
     }
 
-    //initInterrupt();
+    Error_Block er;
+    Semaphore_Params params;
+    Semaphore_Params_init(&params);
+
+    interruptSem = Semaphore_create(0, &params, &er);
+
+    initInterrupt();
     //since the power on interrupt is a lie we initialize here.
     init();
 
     while (1)       //GPIO INt pin suchen anschauen implementieren
     {
-//        if (inter)
-//        {
-//            System_printf("Interrupt received! \n");
-//            System_flush();
-//            inter = false;
-//        }
-
-        //read interrupt register
-        readBuffer = I2C_read(0x00);
-
-        switch (readBuffer)
+        if (Semaphore_pend(interruptSem, BIOS_WAIT_FOREVER))
         {
-        case 0b00000001: //Power On -> init; Or not. Interrupt is a lie.
-            System_printf("Halleluja, der Messiah hat vorbeigeschaut!");
-            System_flush();
-            break;
+            //read interrupt register
+            readBuffer = I2C_read(0x00);
 
-        case 0b00100000: //heartrate Data ready -> go fetch
-            readFIFOData();
-            break;
-        case 0b00000000:
-            //no interrupts, nothing to do
-            break;
-        default:
-            System_printf("funky interrupts %u", readBuffer);
-            System_flush();
-            break;
+            switch (readBuffer)
+            {
+            case 0b00000001: //Power On -> init; Or not. Interrupt is a lie.
+                System_printf("Halleluja, der Messiah hat vorbeigeschaut!");
+                System_flush();
+                break;
+
+            case 0b00100000: //heartrate Data ready -> go fetch
+                readFIFOData();
+                break;
+            default:
+                System_printf("funky interrupts %u\n", readBuffer);
+                System_flush();
+                break;
+            }
+
+            GPIO_clearInt(EK_TM4C1294XL_CLICK_2);
         }
 
     }
@@ -145,7 +147,7 @@ static void heartrate_run()
     //register 0x16 for full degrees, 0x17 for fractions
     //also full degrees can be negative, fractions are always positive and need to be ADDED not appended
 
-    I2C_close(handle);
+    //I2C_close(handle);
 }
 
 static void init()
@@ -174,6 +176,9 @@ static void init()
 
     //enable heartrate interrupt in interrupt enable register
     I2C_write(0x01, 0b00100000);
+
+    //clear out any interrupts that have already accumulated
+    I2C_read(0x00);
 }
 
 static void readFIFOData()
@@ -296,37 +301,13 @@ static int comparison(const void* a, const void* b)
     return (*(unsigned short*) a - *(unsigned short*) b);
 }
 
-//static void initInterrupt()
-//{
-//    uint32_t ui32Strength;
-//    uint32_t ui32PinType;
-//
-//    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOD);
-//
-//    GPIOPinTypeGPIOInput(GPIO_PORTD_BASE, GPIO_PIN_4);
-//
-//    GPIOPadConfigGet(GPIO_PORTD_BASE, GPIO_PIN_4, &ui32Strength, &ui32PinType);
-//    GPIOPadConfigSet(GPIO_PORTD_BASE, GPIO_PIN_4, ui32Strength, GPIO_PIN_TYPE_STD_WPU);
-//
-//    //heartrate_click pull pin low -> register falling edge
-//    GPIOIntTypeSet(GPIO_PORTD_BASE, GPIO_PIN_4, GPIO_FALLING_EDGE);
-//
-//    //GPIOIntRegister(GPIO_PORTD_BASE, interruptFunction);
-//
-//    GPIOIntEnable(GPIO_PORTD_BASE, GPIO_PIN_4);
-//
-//    Hwi_Handle hwi0;
-//    Hwi_Params hwiParams;
-//    Hwi_Params_init(&hwiParams);
-//    hwiParams.arg = 2;
-//    hwiParams.enableInt = TRUE;
-//    hwi0 = Hwi_create(INT_GPIOD, interruptFunction, &hwiParams, NULL);
-//    if (hwi0 == NULL) {
-//      System_abort("Hwi create failed");
-//    }
-//}
-//
-//static void interruptFunction()
-//{
-//    inter = true;
-//}
+static void initInterrupt()
+{
+    GPIO_setCallback(EK_TM4C1294XL_CLICK_2, interruptFunction);
+    GPIO_enableInt(EK_TM4C1294XL_CLICK_2);
+}
+
+static void interruptFunction(unsigned int index)
+{
+    Semaphore_post(interruptSem);
+}

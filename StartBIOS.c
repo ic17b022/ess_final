@@ -18,6 +18,7 @@ int main(void)
 
     Board_initI2C();
     Board_initSPI();
+    Board_initGPIO();
 
     // init the SPI with the actual system clock
     initSPI(ui32SysClock);
