@@ -106,28 +106,30 @@ static void heartrate_run()
         {
             System_printf("Interrupt received! \n");
             System_flush();
-        }
 
-        //read interrupt register
-        readBuffer = I2C_read(0x00);
+            //read interrupt register
+            readBuffer = I2C_read(0x00);
 
-        switch (readBuffer)
-        {
-        case 0b00000001: //Power On -> init; Or not. Interrupt is a lie.
-            System_printf("Halleluja, der Messiah hat vorbeigeschaut!");
-            System_flush();
-            break;
+            switch (readBuffer)
+            {
+            case 0b00000001: //Power On -> init; Or not. Interrupt is a lie.
+                System_printf("Halleluja, der Messiah hat vorbeigeschaut!");
+                System_flush();
+                break;
 
-        case 0b00100000: //heartrate Data ready -> go fetch
-            readFIFOData();
-            break;
-        case 0b00000000:
-            //no interrupts, nothing to do
-            break;
-        default:
-            System_printf("funky interrupts %u", readBuffer);
-            System_flush();
-            break;
+            case 0b00100000: //heartrate Data ready -> go fetch
+                readFIFOData();
+                break;
+            case 0b00000000:
+                //no interrupts, nothing to do
+                break;
+            default:
+                System_printf("funky interrupts %u", readBuffer);
+                System_flush();
+                break;
+            }
+
+            GPIO_clearInt(EK_TM4C1294XL_CLICK_2);
         }
 
     }
@@ -310,6 +312,5 @@ static void initInterrupt()
 
 static void interruptFunction(unsigned int index)
 {
-    GPIO_clearInt(EK_TM4C1294XL_CLICK_2);
     Semaphore_post(interruptSem);
 }
