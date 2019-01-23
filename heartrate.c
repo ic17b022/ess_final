@@ -30,10 +30,10 @@ static void initInterrupt();
 static void interruptFunction(unsigned int index);
 
 I2C_Handle handle;
+Semaphore_Handle interruptSem;
 
 unsigned short sensor_data[SENSOR_DATA_SIZE];
 unsigned short data_count;
-bool inter = false;
 
 void create_heartrate_tasks(int prio)
 {
@@ -43,7 +43,7 @@ void create_heartrate_tasks(int prio)
     /* Create heartrate task */
     Error_init(&eb);
     Task_Params_init(&params);
-    params.stackSize = 512; /* stack in bytes */
+    params.stackSize = 1024; /* stack in bytes */
     params.priority = prio; /* 0-15 (15 is highest priority on default -> see RTOS Task configuration) */
     params.instance->name = "heartrate";
 
@@ -90,18 +90,23 @@ static void heartrate_run()
         System_abort("I2C was not opened");
     }
 
+    Error_Block er;
+    Semaphore_Params params;
+    Semaphore_Params_init(&params);
+
+    interruptSem = Semaphore_create(0, &params, &er);
+
     initInterrupt();
     //since the power on interrupt is a lie we initialize here.
     init();
 
     while (1)       //GPIO INt pin suchen anschauen implementieren
     {
-//        if (inter)
-//        {
-//            System_printf("Interrupt received! \n");
-//            System_flush();
-//            inter = false;
-//        }
+        if (Semaphore_pend(interruptSem, BIOS_NO_WAIT))
+        {
+            System_printf("Interrupt received! \n");
+            System_flush();
+        }
 
         //read interrupt register
         readBuffer = I2C_read(0x00);
@@ -306,5 +311,5 @@ static void initInterrupt()
 static void interruptFunction(unsigned int index)
 {
     GPIO_clearInt(EK_TM4C1294XL_CLICK_2);
-    inter = true;
+    Semaphore_post(interruptSem);
 }
