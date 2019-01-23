@@ -299,12 +299,12 @@ static int comparison(const void* a, const void* b)
 
 static void initInterrupt()
 {
-    GPIO_setCallback(2, interruptFunction);
-    GPIO_enableInt(2);
+    GPIO_setCallback(EK_TM4C1294XL_CLICK_2, interruptFunction);
+    GPIO_enableInt(EK_TM4C1294XL_CLICK_2);
 }
 
 static void interruptFunction(unsigned int index)
 {
-    GPIO_clearInt(2);
+    GPIO_clearInt(EK_TM4C1294XL_CLICK_2);
     inter = true;
 }
