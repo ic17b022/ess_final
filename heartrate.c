@@ -102,11 +102,8 @@ static void heartrate_run()
 
     while (1)       //GPIO INt pin suchen anschauen implementieren
     {
-        if (Semaphore_pend(interruptSem, BIOS_NO_WAIT))
+        if (Semaphore_pend(interruptSem, BIOS_WAIT_FOREVER))
         {
-            System_printf("Interrupt received! \n");
-            System_flush();
-
             //read interrupt register
             readBuffer = I2C_read(0x00);
 
@@ -120,11 +117,8 @@ static void heartrate_run()
             case 0b00100000: //heartrate Data ready -> go fetch
                 readFIFOData();
                 break;
-            case 0b00000000:
-                //no interrupts, nothing to do
-                break;
             default:
-                System_printf("funky interrupts %u", readBuffer);
+                System_printf("funky interrupts %u\n", readBuffer);
                 System_flush();
                 break;
             }
@@ -182,6 +176,9 @@ static void init()
 
     //enable heartrate interrupt in interrupt enable register
     I2C_write(0x01, 0b00100000);
+
+    //clear out any interrupts that have already accumulated
+    I2C_read(0x00);
 }
 
 static void readFIFOData()
