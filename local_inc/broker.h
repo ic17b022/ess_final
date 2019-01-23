@@ -11,6 +11,7 @@
 // ----------------------------------------------------------------------------- includes ---
 #include "common.h"
 #include "UART_Task.h"
+#include "oled_display.h"
 
 //! \addtogroup group_comm
 //! @{
