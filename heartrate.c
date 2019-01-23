@@ -147,7 +147,7 @@ static void heartrate_run()
     //register 0x16 for full degrees, 0x17 for fractions
     //also full degrees can be negative, fractions are always positive and need to be ADDED not appended
 
-    I2C_close(handle);
+    //I2C_close(handle);
 }
 
 static void init()
