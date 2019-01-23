@@ -11,6 +11,7 @@
 #include <inc/hw_ints.h>
 #include <driverlib/sysctl.h>
 #include <ti/drivers/I2C.h>
+#include <ti/drivers/GPIO.h>
 
 #define SLAVEADDR_READ 0b10101111
 #define SLAVEADDR_WRITE 0b10101110
@@ -25,8 +26,8 @@ static void I2C_write(uint8_t reg, uint8_t value);
 static uint8_t I2C_read(uint8_t reg);
 static void I2C_readFIFO(uint8_t* array);
 static int comparison(const void* a, const void* b);
-//static void initInterrupt();
-//static void interruptFunction();
+static void initInterrupt();
+static void interruptFunction(unsigned int index);
 
 I2C_Handle handle;
 
@@ -89,7 +90,7 @@ static void heartrate_run()
         System_abort("I2C was not opened");
     }
 
-    //initInterrupt();
+    initInterrupt();
     //since the power on interrupt is a lie we initialize here.
     init();
 
@@ -296,37 +297,14 @@ static int comparison(const void* a, const void* b)
     return (*(unsigned short*) a - *(unsigned short*) b);
 }
 
-//static void initInterrupt()
-//{
-//    uint32_t ui32Strength;
-//    uint32_t ui32PinType;
-//
-//    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOD);
-//
-//    GPIOPinTypeGPIOInput(GPIO_PORTD_BASE, GPIO_PIN_4);
-//
-//    GPIOPadConfigGet(GPIO_PORTD_BASE, GPIO_PIN_4, &ui32Strength, &ui32PinType);
-//    GPIOPadConfigSet(GPIO_PORTD_BASE, GPIO_PIN_4, ui32Strength, GPIO_PIN_TYPE_STD_WPU);
-//
-//    //heartrate_click pull pin low -> register falling edge
-//    GPIOIntTypeSet(GPIO_PORTD_BASE, GPIO_PIN_4, GPIO_FALLING_EDGE);
-//
-//    //GPIOIntRegister(GPIO_PORTD_BASE, interruptFunction);
-//
-//    GPIOIntEnable(GPIO_PORTD_BASE, GPIO_PIN_4);
-//
-//    Hwi_Handle hwi0;
-//    Hwi_Params hwiParams;
-//    Hwi_Params_init(&hwiParams);
-//    hwiParams.arg = 2;
-//    hwiParams.enableInt = TRUE;
-//    hwi0 = Hwi_create(INT_GPIOD, interruptFunction, &hwiParams, NULL);
-//    if (hwi0 == NULL) {
-//      System_abort("Hwi create failed");
-//    }
-//}
-//
-//static void interruptFunction()
-//{
-//    inter = true;
-//}
+static void initInterrupt()
+{
+    GPIO_setCallback(2, interruptFunction);
+    GPIO_enableInt(2);
+}
+
+static void interruptFunction(unsigned int index)
+{
+    GPIO_clearInt(2);
+    inter = true;
+}
